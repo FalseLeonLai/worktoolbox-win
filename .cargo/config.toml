@@ -1,0 +1,4 @@
+# 本机 /home 分区空间紧张：编译产物统一放到根分区（64G 空闲）
+# 想恢复默认：删掉本文件即可（产物回到 app/target/）
+[build]
+target-dir = "/var/tmp/worktoolbox-target"
