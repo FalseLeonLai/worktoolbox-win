@@ -1,7 +1,9 @@
-use crate::app::App;
 use eframe::egui;
 
-pub fn show(_app: &mut App, ui: &mut egui::Ui) {
+#[derive(Default)]
+pub struct CableScreen;
+
+pub fn show(_s: &mut CableScreen, ui: &mut egui::Ui) {
     super::placeholder(
         ui,
         "线缆选型计算",
