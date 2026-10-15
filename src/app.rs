@@ -41,7 +41,7 @@ impl App {
             units: units::UnitsScreen::new(),
             electrical: electrical::ElectricalScreen::new(),
             comms: comms::CommsScreen::new(),
-            cable: Default::default(),
+            cable: cable::CableScreen::new(),
         }
     }
 }
@@ -69,7 +69,7 @@ impl eframe::App for App {
                     );
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
-                            egui::RichText::new("v0.1.0 · Windows 版（开发中）")
+                            egui::RichText::new("v1.0 · 离线版")
                                 .color(crate::theme::MUTED)
                                 .size(12.0),
                         );

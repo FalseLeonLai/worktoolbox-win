@@ -51,7 +51,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         Item {
             title: "线缆选型计算",
             sub: "载流量 / 压降 / 保护配合（GB · IEC · UL）",
-            tag: "开发中",
+            tag: "",
             color: egui::Color32::from_rgb(251, 191, 36),
             screen: Screen::Cable,
         },
