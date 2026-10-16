@@ -11,7 +11,7 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
             ui.label(crate::theme::b("工作工具箱 · Windows 版").size(23.0).color(text()));
             ui.add_space(2.0);
             ui.label(
-                egui::RichText::new("v1.4.0 · Rust + egui 重制 · 完全离线运行")
+                egui::RichText::new("v1.4.1 · Rust + egui 重制 · 完全离线运行")
                     .color(muted())
                     .size(13.5),
             );

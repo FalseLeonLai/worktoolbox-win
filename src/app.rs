@@ -100,7 +100,7 @@ impl eframe::App for App {
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                     ui.add_space(2.0);
                     ui.label(
-                        egui::RichText::new("v1.4.0 · 单文件离线版")
+                        egui::RichText::new("v1.4.1 · 单文件离线版")
                             .size(10.5)
                             .color(theme::faint_text()),
                     );

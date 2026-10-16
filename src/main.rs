@@ -5,6 +5,7 @@
 
 mod app;
 mod data;
+mod diag;
 mod fonts;
 mod icons;
 mod screens;
@@ -14,6 +15,10 @@ mod ui;
 use eframe::egui;
 
 fn main() -> eframe::Result {
+    diag::install_panic_hook();
+    if std::env::var("WTB_PANIC_TEST").is_ok() {
+        panic!("WTB_PANIC_TEST：模拟崩溃（用于验证诊断日志）");
+    }
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("工作工具箱")
@@ -23,10 +28,11 @@ fn main() -> eframe::Result {
         ..Default::default()
     };
 
-    eframe::run_native(
+    let result = eframe::run_native(
         "工作工具箱",
         options,
         Box::new(|cc| {
+            diag::startup(&gpu_desc(cc));
             fonts::install(&cc.egui_ctx);
             theme::install(&cc.egui_ctx);
             // 调试/截图用：WTB_THEME=light|dark 指定初始主题（默认深色）
@@ -38,7 +44,24 @@ fn main() -> eframe::Result {
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(app::App::new(cc)))
         }),
-    )
+    );
+    if let Err(e) = &result {
+        diag::write_line(&format!("[eframe 错误] {e:?}\n----------------------------"));
+    }
+    result
+}
+
+/// 记录 GPU / 渲染后端信息（启动诊断用）
+fn gpu_desc(cc: &eframe::CreationContext<'_>) -> String {
+    if let Some(rs) = &cc.wgpu_render_state {
+        let i = rs.adapter.get_info();
+        format!(
+            "renderer=wgpu | gpu={} | backend={:?} | type={:?} | driver={} {}",
+            i.name, i.backend, i.device_type, i.driver, i.driver_info
+        )
+    } else {
+        "renderer=(非 wgpu)".to_string()
+    }
 }
 
 /// 应用窗口图标（编译期嵌入 WebP，image crate 解码为 RGBA）

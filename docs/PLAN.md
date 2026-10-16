@@ -130,3 +130,11 @@
 - 报警码查询新增「系列」筛选：结果行下拉选择，随品牌 / 类别联动；选择失效自动清除
 - 数据层：search() 增加 series 过滤；新增 series_list()；回归测试（DDR系列 × 234 → 1 条）
 - `feat/alarm-series-filter` 分支 → PR → main；发布 GitHub Release **v1.4.0**
+
+## 14. v1.4.1 诊断增强（2026-10-16）✅
+
+- 用户反馈：**拖动窗口拉伸导致崩溃**（Windows）。Linux/Xvfb 模拟 300+ 次极值缩放未能复现 → 判定为 Windows 端环境相关
+- 查证为上游已知问题类：emilk/egui#5460（Windows 快速 resize 崩溃，官方 issue 开放中，重现于多版本）
+- 本版增加诊断能力：启动环境日志（GPU / 渲染后端）+ panic / eframe 错误日志 → 程序目录「工作工具箱-诊断.log」
+- 支持 `WGPU_BACKEND` 环境变量切换渲染后端（上游原生支持）；待用户反馈日志后进一步定位/修复
+- 已排除：eframe 0.36.2 默认即 wgpu（DX12 路径），非 glow/OpenGL 兼容层问题
