@@ -2,6 +2,15 @@
 
 项目于 2026-10-15 启动（原安卓版 App 逆向 → Rust + egui 重写），至 10-16 完成主要迭代。
 
+## v1.4.2 · 2026-10-16
+
+**修复尝试**：Windows 快速拖拽缩放崩溃（据 v1.4.1 诊断日志定位）
+- 根因链：窗口缩放时图形驱动掉设备（device lost）→ 上游 egui-wgpu 在「staging buffer」处 panic
+  （上游已知问题、仍未修复；用户机器原走 Intel Vulkan 驱动路径）
+- **Windows 默认渲染后端固定为 DX12**（Intel / AMD 的 DX12 驱动在 Windows 上更稳）；
+  其他平台行为不变；环境变量 `WGPU_BACKEND=vulkan|gl` 仍可覆盖
+- 随包提供「试试-Vulkan启动.bat」「试试-OpenGL启动.bat」用于切换后端排查
+
 ## v1.4.1 · 2026-10-16
 
 **诊断增强**（用于定位 Windows「快速拖拽缩放崩溃」）

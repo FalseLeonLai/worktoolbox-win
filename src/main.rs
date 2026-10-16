@@ -19,7 +19,8 @@ fn main() -> eframe::Result {
     if std::env::var("WTB_PANIC_TEST").is_ok() {
         panic!("WTB_PANIC_TEST：模拟崩溃（用于验证诊断日志）");
     }
-    let options = eframe::NativeOptions {
+    #[cfg_attr(not(target_os = "windows"), allow(unused_mut))]
+    let mut options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("工作工具箱")
             .with_inner_size([1180.0, 760.0])
@@ -27,6 +28,16 @@ fn main() -> eframe::Result {
             .with_icon(app_icon()),
         ..Default::default()
     };
+    // Windows：默认固定 DX12 后端（避免 Intel 等驱动在窗口快速缩放时掉设备 →
+    // 上游 egui-wgpu 的「staging buffer」panic）；可用环境变量 WGPU_BACKEND=vulkan|gl 覆盖。
+    #[cfg(target_os = "windows")]
+    if std::env::var("WGPU_BACKEND").is_err() {
+        let mut cfg = eframe::WgpuConfiguration::default();
+        if let eframe::egui_wgpu::WgpuSetup::CreateNew(setup) = &mut cfg.wgpu_setup {
+            setup.instance_descriptor.backends = eframe::wgpu::Backends::DX12;
+        }
+        options.wgpu_options = cfg;
+    }
 
     let result = eframe::run_native(
         "工作工具箱",

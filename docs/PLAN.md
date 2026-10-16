@@ -138,3 +138,11 @@
 - 本版增加诊断能力：启动环境日志（GPU / 渲染后端）+ panic / eframe 错误日志 → 程序目录「工作工具箱-诊断.log」
 - 支持 `WGPU_BACKEND` 环境变量切换渲染后端（上游原生支持）；待用户反馈日志后进一步定位/修复
 - 已排除：eframe 0.36.2 默认即 wgpu（DX12 路径），非 glow/OpenGL 兼容层问题
+
+## 15. v1.4.2 DX12 默认后端（2026-10-16）✅
+
+- 收到用户诊断日志：panic 于 egui-wgpu `renderer.rs:984`（staging buffer 创建失败）——
+  上游 issue #8450/#8265 同类：**device lost 的次生 panic**；用户机器实际走 **Vulkan** 后端（Intel Arc 驱动）
+- 修复：Windows 默认固定 **DX12** 后端（`WgpuConfiguration.wgpu_setup` → `backends = DX12`），
+  环境变量 `WGPU_BACKEND` 仍可覆盖；随包附切换 bat
+- 上游 panic 未修（master 同），本方案从触发源（驱动路径）规避
