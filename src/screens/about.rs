@@ -8,15 +8,10 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
         .auto_shrink([false, false])
         .show(ui, |ui| {
             ui.add_space(6.0);
-            ui.label(
-                egui::RichText::new("工作工具箱 · Windows 版")
-                    .color(TEXT)
-                    .size(24.0)
-                    .strong(),
-            );
+            ui.label(crate::theme::b("工作工具箱 · Windows 版").size(23.0).color(TEXT));
             ui.add_space(2.0);
             ui.label(
-                egui::RichText::new("v1.0 · Rust + egui 重制 · 完全离线运行")
+                egui::RichText::new("v1.1 · Rust + egui 重制 · 完全离线运行")
                     .color(MUTED)
                     .size(13.5),
             );
@@ -63,7 +58,7 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
 }
 
 fn section(ui: &mut egui::Ui, t: &str) {
-    ui.label(egui::RichText::new(t).color(ACCENT).size(13.5).strong());
+    ui.label(crate::theme::b(t).size(13.0).color(MUTED));
     ui.add_space(4.0);
 }
 

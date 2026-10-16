@@ -92,18 +92,20 @@ fn fix_selections(std: &StandardsFile, inp: &mut InputState) {
 
 pub fn show(s: &mut CableScreen, ui: &mut egui::Ui) {
     // 标准选择
-    ui.horizontal(|ui| {
-        for i in 0..s.standards.len() {
-            let label = match &s.standards[i] {
-                Ok(f) => f.label.clone(),
-                Err(_) => format!("标准 {}", i + 1),
-            };
-            if chip(ui, s.sel_std == i, &label) {
-                s.sel_std = i;
-            }
-        }
-    });
-    ui.add_space(8.0);
+    let labels: Vec<String> = s
+        .standards
+        .iter()
+        .enumerate()
+        .map(|(i, st)| match st {
+            Ok(f) => f.label.clone(),
+            Err(_) => format!("标准 {}", i + 1),
+        })
+        .collect();
+    let label_refs: Vec<&str> = labels.iter().map(|x| x.as_str()).collect();
+    if let Some(i) = crate::ui::segmented(ui, &label_refs, s.sel_std) {
+        s.sel_std = i;
+    }
+    ui.add_space(10.0);
 
     let sel = s.sel_std.min(s.standards.len() - 1);
     let std = match &s.standards[sel] {
@@ -146,17 +148,7 @@ pub fn show(s: &mut CableScreen, ui: &mut egui::Ui) {
 }
 
 fn chip(ui: &mut egui::Ui, active: bool, text: &str) -> bool {
-    let r = ui.add(
-        egui::Button::new(
-            egui::RichText::new(text)
-                .size(13.5)
-                .color(if active { egui::Color32::WHITE } else { MUTED }),
-        )
-        .fill(if active { ACCENT.linear_multiply(0.5) } else { CARD })
-        .corner_radius(egui::CornerRadius::same(12))
-        .min_size(egui::vec2(0.0, 26.0)),
-    );
-    r.clicked()
+    crate::ui::chip(ui, active, text)
 }
 
 fn muted(t: &str) -> egui::RichText {
@@ -164,15 +156,9 @@ fn muted(t: &str) -> egui::RichText {
 }
 
 fn card(ui: &mut egui::Ui, title: &str, body: impl FnOnce(&mut egui::Ui)) {
-    ui.label(egui::RichText::new(title).color(ACCENT).size(13.5).strong());
+    crate::ui::section(ui, title);
     ui.add_space(4.0);
-    egui::Frame::new()
-        .fill(CARD)
-        .corner_radius(10)
-        .inner_margin(12)
-        .show(ui, |ui| {
-            body(ui);
-        });
+    crate::ui::card(ui, body);
     ui.add_space(10.0);
 }
 
@@ -244,13 +230,15 @@ fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
         ui.add_space(4.0);
         ui.horizontal(|ui| {
             ui.add_sized([112.0, 18.0], egui::Label::new(muted("相数")));
-            if chip(ui, inp.phases == 3, "三相") {
-                inp.phases = 3;
-                inp.voltage = 380.0;
-            }
-            if chip(ui, inp.phases == 1, "单相") {
-                inp.phases = 1;
-                inp.voltage = 220.0;
+            let sel = if inp.phases == 3 { 0 } else { 1 };
+            if let Some(i) = crate::ui::segmented(ui, &["三相", "单相"], sel) {
+                if i == 0 {
+                    inp.phases = 3;
+                    inp.voltage = 380.0;
+                } else {
+                    inp.phases = 1;
+                    inp.voltage = 220.0;
+                }
             }
         });
         ui.add_space(3.0);
@@ -277,15 +265,16 @@ fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
 }
 
 fn stat(ui: &mut egui::Ui, k: &str, v: &str, col: egui::Color32) {
-    ui.vertical(|ui| {
-        ui.label(egui::RichText::new(k).color(MUTED).size(12.0));
-        ui.label(egui::RichText::new(v).color(col).size(22.0).strong());
-    });
+    crate::ui::stat(ui, k, v, col);
 }
 
 fn kv_line(ui: &mut egui::Ui, k: &str, v: &str, col: egui::Color32) {
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(format!("{k}：")).color(MUTED).size(13.0));
+        ui.label(
+            egui::RichText::new(format!("{k}："))
+                .color(FAINT_TEXT)
+                .size(13.0),
+        );
         ui.label(egui::RichText::new(v).color(col).size(13.5));
     });
 }
@@ -304,22 +293,17 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
     if let Some(c) = &r.selected {
         egui::Frame::new()
             .fill(CARD)
-            .corner_radius(10)
-            .inner_margin(14)
+            .stroke(border(20))
+            .corner_radius(12)
+            .inner_margin(16)
             .show(ui, |ui| {
-                ui.label(
-                    egui::RichText::new("推荐方案")
-                        .color(ACCENT)
-                        .size(13.5)
-                        .strong(),
-                );
+                crate::ui::section(ui, "推荐方案");
                 ui.add_space(6.0);
                 ui.horizontal(|ui| {
                     ui.label(
-                        egui::RichText::new(&c.size_label)
+                        crate::theme::b(&c.size_label)
                             .color(OK_GREEN)
-                            .size(27.0)
-                            .strong(),
+                            .size(28.0),
                     );
                     ui.add_space(12.0);
                     ui.label(
@@ -339,18 +323,28 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
                     TEXT,
                 );
                 let vd_ok = c.vd_pct <= inp.vd_limit_pct + 1e-9;
-                kv_line(
-                    ui,
-                    "电压降",
-                    &format!(
-                        "{:.1} V（{:.2}%）· 允许 ≤ {}% {}",
-                        c.vd_v,
-                        c.vd_pct,
-                        fmt_limit(inp.vd_limit_pct),
-                        if vd_ok { "✓" } else { "✗ 超限" }
-                    ),
-                    if vd_ok { OK_GREEN } else { AMBER },
-                );
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(
+                        egui::RichText::new("电压降：")
+                            .color(FAINT_TEXT)
+                            .size(13.0),
+                    );
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "{:.1} V（{:.2}%）· 允许 ≤ {}%",
+                            c.vd_v,
+                            c.vd_pct,
+                            fmt_limit(inp.vd_limit_pct)
+                        ))
+                        .color(TEXT)
+                        .size(13.5),
+                    );
+                    crate::ui::pill(
+                        ui,
+                        if vd_ok { "满足" } else { "超限" },
+                        if vd_ok { OK_GREEN } else { AMBER },
+                    );
+                });
             });
         ui.add_space(12.0);
     } else {
@@ -363,13 +357,8 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
     }
 
     if !r.alternatives.is_empty() {
-        ui.label(
-            egui::RichText::new("备选截面（更大 1~3 档）")
-                .color(ACCENT)
-                .size(13.5)
-                .strong(),
-        );
-        ui.add_space(4.0);
+        crate::ui::section(ui, "备选截面（更大 1~3 档）");
+        ui.add_space(2.0);
         egui::Grid::new("cable_alt")
             .num_columns(4)
             .spacing([18.0, 4.0])
@@ -393,12 +382,7 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
     }
 
     if !r.suggested_types.is_empty() {
-        ui.label(
-            egui::RichText::new("可选电缆型号")
-                .color(ACCENT)
-                .size(13.5)
-                .strong(),
-        );
+        crate::ui::section(ui, "可选电缆型号");
         ui.add_space(3.0);
         for t in &r.suggested_types {
             ui.label(egui::RichText::new(format!("· {t}")).color(TEXT).size(13.5));

@@ -118,17 +118,7 @@ pub fn show(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
 }
 
 fn chip(ui: &mut egui::Ui, active: bool, text: &str) -> bool {
-    let r = ui.add(
-        egui::Button::new(
-            egui::RichText::new(text)
-                .size(13.0)
-                .color(if active { egui::Color32::WHITE } else { MUTED }),
-        )
-        .fill(if active { ACCENT.linear_multiply(0.5) } else { CARD })
-        .corner_radius(egui::CornerRadius::same(12))
-        .min_size(egui::vec2(0.0, 24.0)),
-    );
-    r.clicked()
+    crate::ui::chip(ui, active, text)
 }
 
 fn list_view(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
@@ -170,9 +160,20 @@ fn list_view(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
                         let tex = s.thumb(&ctx, key);
                         let (rect, resp) = ui
                             .allocate_exact_size(egui::vec2(card_w, card_h), egui::Sense::click());
-                        let bg = if resp.hovered() { CARD_HOVER } else { CARD };
-                        ui.painter()
-                            .rect_filled(rect, egui::CornerRadius::same(10), bg);
+                        let t = ui
+                            .ctx()
+                            .animate_bool_with_time(resp.id.with("hv"), resp.hovered(), 0.12);
+                        ui.painter().rect_filled(
+                            rect,
+                            egui::CornerRadius::same(12),
+                            CARD.lerp_to_gamma(CARD_HOVER, t),
+                        );
+                        ui.painter().rect_stroke(
+                            rect,
+                            egui::CornerRadius::same(12),
+                            border((20.0 + 22.0 * t) as u8),
+                            egui::StrokeKind::Inside,
+                        );
                         if let Some(t) = &tex {
                             let img_rect = egui::Rect::from_center_size(
                                 egui::pos2(rect.center().x, rect.top() + 10.0 + 59.0),
@@ -225,7 +226,7 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
         .id_salt("elec_detail")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            ui.label(egui::RichText::new(name).size(24.0).strong().color(TEXT));
+            ui.label(crate::theme::b(name).size(24.0).color(TEXT));
             ui.add_space(10.0);
             ui.horizontal_top(|ui| {
                 // 左：渲染图（浅底圆角框）
@@ -249,21 +250,11 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
                 // 右：用途 + 要点
                 ui.vertical(|ui| {
                     ui.set_max_width(560.0);
-                    ui.label(
-                        egui::RichText::new("用途与原理")
-                            .color(ACCENT)
-                            .size(13.5)
-                            .strong(),
-                    );
+                    crate::ui::section(ui, "用途与原理");
                     ui.add_space(3.0);
                     ui.label(egui::RichText::new(summary).size(14.5).color(TEXT));
                     ui.add_space(12.0);
-                    ui.label(
-                        egui::RichText::new("工程要点")
-                            .color(ACCENT)
-                            .size(13.5)
-                            .strong(),
-                    );
+                    crate::ui::section(ui, "工程要点");
                     for (n, tip) in tips.iter().enumerate() {
                         ui.add_space(5.0);
                         ui.label(

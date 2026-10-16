@@ -35,7 +35,7 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
         // —— 左：类别 ——
         ui.vertical(|ui| {
             ui.set_width(180.0);
-            ui.label(egui::RichText::new("类别").color(MUTED).size(13.0).strong());
+            crate::ui::section(ui, "类别");
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
                 .id_salt("units_cats")
@@ -43,11 +43,31 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
                 .show(ui, |ui| {
                     for (i, c) in s.cats.iter().enumerate() {
                         let sel = i == s.cat_idx;
-                        if ui
-                            .selectable_label(sel, egui::RichText::new(c.name).size(14.5))
-                            .clicked()
-                            && !sel
-                        {
+                        let (rect, resp) = ui.allocate_exact_size(
+                            egui::vec2(ui.available_width(), 30.0),
+                            egui::Sense::click(),
+                        );
+                        let t = ui
+                            .ctx()
+                            .animate_bool_with_time(resp.id.with("hv"), resp.hovered(), 0.1);
+                        if sel || t > 0.0 {
+                            let fill = if sel {
+                                accent_soft(42)
+                            } else {
+                                egui::Color32::TRANSPARENT
+                                    .lerp_to_gamma(egui::Color32::from_white_alpha(9), t)
+                            };
+                            ui.painter()
+                                .rect_filled(rect, egui::CornerRadius::same(8), fill);
+                        }
+                        ui.painter().text(
+                            rect.left_center() + egui::vec2(12.0, 0.0),
+                            egui::Align2::LEFT_CENTER,
+                            c.name,
+                            egui::FontId::proportional(13.5),
+                            if sel { egui::Color32::WHITE } else { TEXT },
+                        );
+                        if resp.clicked() && !sel {
                             s.cat_idx = i;
                             s.from_idx = 0;
                             s.to_idx = if s.cats[i].units.len() > 1 { 1 } else { 0 };
@@ -71,12 +91,7 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
             s.from_idx = s.from_idx.min(units.len() - 1);
             s.to_idx = s.to_idx.min(units.len() - 1);
 
-            ui.label(
-                egui::RichText::new(s.cats[s.cat_idx].name)
-                    .color(TEXT)
-                    .size(20.0)
-                    .strong(),
-            );
+            ui.label(crate::theme::b(s.cats[s.cat_idx].name).size(20.0).color(TEXT));
             ui.add_space(10.0);
 
             ui.horizontal(|ui| {
@@ -123,20 +138,15 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
             );
             ui.add_space(2.0);
             ui.label(
-                egui::RichText::new(format!("= {} {}", fmt_num(out), to.symbol))
+                crate::theme::b(format!("= {} {}", fmt_num(out), to.symbol))
                     .color(ACCENT)
-                    .size(30.0)
-                    .strong(),
+                    .size(32.0),
             );
 
             ui.add_space(14.0);
             ui.separator();
             ui.add_space(4.0);
-            ui.label(
-                egui::RichText::new("本类别全部单位（按当前输入换算）")
-                    .color(MUTED)
-                    .size(13.0),
-            );
+            ui.label(crate::theme::b("本类别全部单位（按当前输入换算）").size(13.0).color(MUTED));
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
                 .id_salt("units_all")

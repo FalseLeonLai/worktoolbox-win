@@ -8,6 +8,7 @@ mod data;
 mod fonts;
 mod screens;
 mod theme;
+mod ui;
 
 use eframe::egui;
 
