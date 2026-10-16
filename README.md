@@ -88,6 +88,10 @@ cargo run
 | [IBM Plex Sans](https://github.com/IBM/plex) / [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) | OFL-1.1 |
 | [Lucide](https://lucide.dev/) 图标 | ISC |
 
+## 致谢
+
+- 原安卓版「工作工具箱」App 及其开发者 **[@2311214610-alt](https://github.com/2311214610-alt)** —— 本项目的报警库与元件资料整理自该 App 的离线数据。
+
 ## 更新日志
 
 见 [CHANGELOG.md](CHANGELOG.md)（v0.1 → v1.4.0 全部迭代）。
