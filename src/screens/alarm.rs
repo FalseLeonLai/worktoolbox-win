@@ -143,7 +143,7 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
     ui.add_space(6.0);
     ui.label(
         egui::RichText::new(format!("共 {} 条", s.results.len()))
-            .color(MUTED)
+            .color(FAINT_TEXT)
             .size(12.0),
     );
     ui.add_space(4.0);
@@ -190,17 +190,7 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
 }
 
 fn chip(ui: &mut egui::Ui, active: bool, text: &str) -> bool {
-    let r = ui.add(
-        egui::Button::new(
-            egui::RichText::new(text)
-                .size(13.0)
-                .color(if active { egui::Color32::WHITE } else { MUTED }),
-        )
-        .fill(if active { ACCENT.linear_multiply(0.5) } else { CARD })
-        .corner_radius(egui::CornerRadius::same(12))
-        .min_size(egui::vec2(0.0, 24.0)),
-    );
-    r.clicked()
+    crate::ui::chip(ui, active, text)
 }
 
 fn trunc(t: &str, n: usize) -> String {
@@ -211,41 +201,43 @@ fn trunc(t: &str, n: usize) -> String {
     s
 }
 
-/// 单行列表项（自绘两行卡片，选中/悬停高亮）
+/// 单行列表项（自绘两行卡片，选中/悬停 = 半透明强调底，动效过渡）
 fn row(ui: &mut egui::Ui, selected: bool, code: &str, name: &str, tag: &str) -> egui::Response {
     let w = ui.available_width();
-    let (rect, resp) = ui.allocate_exact_size(egui::vec2(w, 42.0), egui::Sense::click());
-    if selected || resp.hovered() {
-        ui.painter().rect_filled(
-            rect,
-            egui::CornerRadius::same(6),
-            if selected { CARD_HOVER } else { CARD },
-        );
+    let (rect, resp) = ui.allocate_exact_size(egui::vec2(w, 46.0), egui::Sense::click());
+    let t = ui
+        .ctx()
+        .animate_bool_with_time(resp.id.with("hv"), resp.hovered(), 0.1);
+    let fill = if selected {
+        accent_soft(42)
+    } else {
+        egui::Color32::TRANSPARENT.lerp_to_gamma(egui::Color32::from_white_alpha(9), t)
+    };
+    if selected || t > 0.0 {
+        ui.painter()
+            .rect_filled(rect, egui::CornerRadius::same(8), fill);
     }
     ui.painter().text(
-        rect.left_top() + egui::vec2(10.0, 6.0),
+        rect.left_top() + egui::vec2(12.0, 8.0),
         egui::Align2::LEFT_TOP,
-        trunc(code, 30),
+        trunc(code, 28),
         egui::FontId::monospace(12.5),
         ACCENT,
     );
     ui.painter().text(
-        rect.left_top() + egui::vec2(10.0, 23.0),
+        rect.left_top() + egui::vec2(12.0, 26.0),
         egui::Align2::LEFT_TOP,
-        trunc(name, 26),
-        egui::FontId::proportional(13.5),
-        TEXT,
+        trunc(name, 24),
+        egui::FontId::proportional(13.0),
+        if selected { egui::Color32::WHITE } else { TEXT },
     );
     ui.painter().text(
-        rect.right_top() + egui::vec2(-10.0, 7.0),
+        rect.right_top() + egui::vec2(-12.0, 8.0),
         egui::Align2::RIGHT_TOP,
         trunc(tag, 10),
         egui::FontId::proportional(11.0),
-        MUTED,
+        FAINT_TEXT,
     );
-    if resp.hovered() {
-        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
-    }
     resp
 }
 
@@ -254,12 +246,7 @@ fn detail(ui: &mut egui::Ui, db: &AlarmDb, idx: u32, show_source: &mut bool) {
     let a: &Alarm = &db.alarms[idx as usize];
     let cat = db.catalog(a);
 
-    ui.label(
-        egui::RichText::new(&a.title)
-            .color(TEXT)
-            .size(18.0)
-            .strong(),
-    );
+    ui.label(crate::theme::b(&a.title).size(19.0).color(TEXT));
     ui.add_space(4.0);
     ui.horizontal_wrapped(|ui| {
         meta(ui, "品牌", &cat.brand);
@@ -329,8 +316,8 @@ fn meta(ui: &mut egui::Ui, k: &str, v: &str) {
     if v.trim().is_empty() || v.trim() == "/" {
         return;
     }
-    ui.label(egui::RichText::new(format!("{k}：")).color(MUTED).size(12.5));
-    ui.label(egui::RichText::new(v).color(TEXT).size(12.5));
+    ui.label(egui::RichText::new(format!("{k}：")).color(FAINT_TEXT).size(12.5));
+    ui.label(egui::RichText::new(v).color(MUTED).size(12.5));
     ui.add_space(12.0);
 }
 
@@ -339,8 +326,8 @@ fn section(ui: &mut egui::Ui, title: &str, body: &str) {
     if b.is_empty() || b == "/" {
         return;
     }
-    ui.label(egui::RichText::new(title).color(ACCENT).size(13.0).strong());
-    ui.add_space(2.0);
+    ui.label(crate::theme::b(title).size(13.0).color(MUTED));
+    ui.add_space(3.0);
     ui.label(egui::RichText::new(b).color(TEXT).size(14.0));
-    ui.add_space(8.0);
+    ui.add_space(9.0);
 }

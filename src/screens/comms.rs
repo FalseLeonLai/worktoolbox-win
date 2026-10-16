@@ -40,15 +40,14 @@ impl CommsScreen {
 }
 
 pub fn show(s: &mut CommsScreen, ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        if chip(ui, s.tab == Tab::Types, "数据类型") {
-            s.tab = Tab::Types;
-        }
-        if chip(ui, s.tab == Tab::Protocols, "通信协议") {
-            s.tab = Tab::Protocols;
-        }
-    });
-    ui.add_space(8.0);
+    if let Some(i) = crate::ui::segmented(
+        ui,
+        &["数据类型", "通信协议"],
+        if s.tab == Tab::Types { 0 } else { 1 },
+    ) {
+        s.tab = if i == 0 { Tab::Types } else { Tab::Protocols };
+    }
+    ui.add_space(10.0);
 
     ui.horizontal_top(|ui| {
         // —— 左：列表 ——
@@ -96,23 +95,13 @@ pub fn show(s: &mut CommsScreen, ui: &mut egui::Ui) {
     });
 }
 
-fn chip(ui: &mut egui::Ui, active: bool, text: &str) -> bool {
-    let r = ui.add(
-        egui::Button::new(
-            egui::RichText::new(text)
-                .size(13.5)
-                .color(if active { egui::Color32::WHITE } else { MUTED }),
-        )
-        .fill(if active { ACCENT.linear_multiply(0.5) } else { CARD })
-        .corner_radius(egui::CornerRadius::same(12))
-        .min_size(egui::vec2(0.0, 26.0)),
-    );
-    r.clicked()
-}
-
 fn kv(ui: &mut egui::Ui, k: &str, v: &str) {
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(format!("{k}：")).color(MUTED).size(13.0));
+        ui.label(
+            egui::RichText::new(format!("{k}："))
+                .color(FAINT_TEXT)
+                .size(12.5),
+        );
         ui.label(egui::RichText::new(v).color(TEXT).size(14.0));
     });
     ui.add_space(2.0);
@@ -123,17 +112,12 @@ fn type_detail(ui: &mut egui::Ui, t: Option<&DataType>) {
         ui.label(egui::RichText::new("（无数据）").color(MUTED));
         return;
     };
-    ui.label(egui::RichText::new(t.name).size(24.0).strong().color(TEXT));
+    ui.label(crate::theme::b(t.name).size(24.0).color(TEXT));
     ui.add_space(10.0);
     kv(ui, "位宽", t.size);
     kv(ui, "取值范围", t.range);
     ui.add_space(8.0);
-    ui.label(
-        egui::RichText::new("工程备注")
-            .color(ACCENT)
-            .size(13.5)
-            .strong(),
-    );
+    crate::ui::section(ui, "工程备注");
     ui.add_space(3.0);
     ui.label(egui::RichText::new(t.note).size(14.0).color(TEXT));
 }
@@ -143,16 +127,11 @@ fn proto_detail(ui: &mut egui::Ui, p: Option<&Protocol>) {
         ui.label(egui::RichText::new("（无数据）").color(MUTED));
         return;
     };
-    ui.label(egui::RichText::new(p.name).size(24.0).strong().color(TEXT));
+    ui.label(crate::theme::b(p.name).size(24.0).color(TEXT));
     ui.add_space(6.0);
     ui.label(egui::RichText::new(p.summary).size(14.5).color(TEXT));
     ui.add_space(12.0);
-    ui.label(
-        egui::RichText::new("工程要点")
-            .color(ACCENT)
-            .size(13.5)
-            .strong(),
-    );
+    crate::ui::section(ui, "工程要点");
     for (n, pt) in p.points.iter().enumerate() {
         ui.add_space(5.0);
         ui.label(
