@@ -8,11 +8,11 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
         .auto_shrink([false, false])
         .show(ui, |ui| {
             ui.add_space(6.0);
-            ui.label(crate::theme::b("工作工具箱 · Windows 版").size(23.0).color(TEXT));
+            ui.label(crate::theme::b("工作工具箱 · Windows 版").size(23.0).color(text()));
             ui.add_space(2.0);
             ui.label(
-                egui::RichText::new("v1.1 · Rust + egui 重制 · 完全离线运行")
-                    .color(MUTED)
+                egui::RichText::new("v1.2 · Rust + egui 重制 · 完全离线运行")
+                    .color(muted())
                     .size(13.5),
             );
             ui.add_space(16.0);
@@ -51,21 +51,21 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
             ui.add_space(18.0);
             ui.label(
                 egui::RichText::new("—— 2026-10 · 单文件离线运行，不联网、不上传任何数据")
-                    .color(MUTED)
+                    .color(muted())
                     .size(12.0),
             );
         });
 }
 
 fn section(ui: &mut egui::Ui, t: &str) {
-    ui.label(crate::theme::b(t).size(13.0).color(MUTED));
+    ui.label(crate::theme::b(t).size(13.0).color(muted()));
     ui.add_space(4.0);
 }
 
 fn bullet(ui: &mut egui::Ui, t: &str) {
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new("·").color(ACCENT).size(14.0));
-        ui.label(egui::RichText::new(t).color(TEXT).size(14.0));
+        ui.label(egui::RichText::new("·").color(accent()).size(14.0));
+        ui.label(egui::RichText::new(t).color(text()).size(14.0));
     });
     ui.add_space(5.0);
 }

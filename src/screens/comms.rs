@@ -99,37 +99,37 @@ fn kv(ui: &mut egui::Ui, k: &str, v: &str) {
     ui.horizontal(|ui| {
         ui.label(
             egui::RichText::new(format!("{k}："))
-                .color(FAINT_TEXT)
+                .color(faint_text())
                 .size(12.5),
         );
-        ui.label(egui::RichText::new(v).color(TEXT).size(14.0));
+        ui.label(egui::RichText::new(v).color(text()).size(14.0));
     });
     ui.add_space(2.0);
 }
 
 fn type_detail(ui: &mut egui::Ui, t: Option<&DataType>) {
     let Some(t) = t else {
-        ui.label(egui::RichText::new("（无数据）").color(MUTED));
+        ui.label(egui::RichText::new("（无数据）").color(muted()));
         return;
     };
-    ui.label(crate::theme::b(t.name).size(24.0).color(TEXT));
+    ui.label(crate::theme::b(t.name).size(24.0).color(text()));
     ui.add_space(10.0);
     kv(ui, "位宽", t.size);
     kv(ui, "取值范围", t.range);
     ui.add_space(8.0);
     crate::ui::section(ui, "工程备注");
     ui.add_space(3.0);
-    ui.label(egui::RichText::new(t.note).size(14.0).color(TEXT));
+    ui.label(egui::RichText::new(t.note).size(14.0).color(text()));
 }
 
 fn proto_detail(ui: &mut egui::Ui, p: Option<&Protocol>) {
     let Some(p) = p else {
-        ui.label(egui::RichText::new("（无数据）").color(MUTED));
+        ui.label(egui::RichText::new("（无数据）").color(muted()));
         return;
     };
-    ui.label(crate::theme::b(p.name).size(24.0).color(TEXT));
+    ui.label(crate::theme::b(p.name).size(24.0).color(text()));
     ui.add_space(6.0);
-    ui.label(egui::RichText::new(p.summary).size(14.5).color(TEXT));
+    ui.label(egui::RichText::new(p.summary).size(14.5).color(text()));
     ui.add_space(12.0);
     crate::ui::section(ui, "工程要点");
     for (n, pt) in p.points.iter().enumerate() {
@@ -137,7 +137,7 @@ fn proto_detail(ui: &mut egui::Ui, p: Option<&Protocol>) {
         ui.label(
             egui::RichText::new(format!("{}. {}", n + 1, pt))
                 .size(14.0)
-                .color(TEXT),
+                .color(text()),
         );
     }
 }

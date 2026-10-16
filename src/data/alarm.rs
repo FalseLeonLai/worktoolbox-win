@@ -115,6 +115,7 @@ impl AlarmDb {
         lo..hi
     }
 
+    #[allow(dead_code)]
     pub fn details_of(&self, alarm_idx: u32) -> &[Detail] {
         let r = self.details_range(alarm_idx);
         &self.details[r]

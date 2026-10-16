@@ -111,7 +111,7 @@ pub fn show(s: &mut CableScreen, ui: &mut egui::Ui) {
     let std = match &s.standards[sel] {
         Ok(f) => f,
         Err(e) => {
-            ui.label(egui::RichText::new(format!("标准数据解析失败：{e}")).color(AMBER));
+            ui.label(egui::RichText::new(format!("标准数据解析失败：{e}")).color(amber()));
             return;
         }
     };
@@ -138,7 +138,7 @@ pub fn show(s: &mut CableScreen, ui: &mut egui::Ui) {
                         ui.add_space(10.0);
                         ui.label(
                             egui::RichText::new(format!("无法计算：{e}"))
-                                .color(AMBER)
+                                .color(amber())
                                 .size(15.0),
                         );
                     }
@@ -147,15 +147,11 @@ pub fn show(s: &mut CableScreen, ui: &mut egui::Ui) {
     });
 }
 
-fn chip(ui: &mut egui::Ui, active: bool, text: &str) -> bool {
-    crate::ui::chip(ui, active, text)
+fn soft(t: &str) -> egui::RichText {
+    egui::RichText::new(t).color(muted()).size(13.0)
 }
 
-fn muted(t: &str) -> egui::RichText {
-    egui::RichText::new(t).color(MUTED).size(13.0)
-}
-
-fn card(ui: &mut egui::Ui, title: &str, body: impl FnOnce(&mut egui::Ui)) {
+fn form_card(ui: &mut egui::Ui, title: &str, body: impl FnOnce(&mut egui::Ui)) {
     crate::ui::section(ui, title);
     ui.add_space(4.0);
     crate::ui::card(ui, body);
@@ -164,7 +160,7 @@ fn card(ui: &mut egui::Ui, title: &str, body: impl FnOnce(&mut egui::Ui)) {
 
 fn combo_row(ui: &mut egui::Ui, label: &str, options: &[(String, String)], val: &mut String) {
     ui.horizontal(|ui| {
-        ui.add_sized([112.0, 18.0], egui::Label::new(muted(label)));
+        ui.add_sized([112.0, 18.0], egui::Label::new(soft(label)));
         let cur = options
             .iter()
             .find(|(id, _)| id == val)
@@ -191,17 +187,17 @@ fn drag_row(
     unit: &str,
 ) {
     ui.horizontal(|ui| {
-        ui.add_sized([112.0, 18.0], egui::Label::new(muted(label)));
+        ui.add_sized([112.0, 18.0], egui::Label::new(soft(label)));
         ui.add(egui::DragValue::new(val).speed(speed).range(range));
         if !unit.is_empty() {
-            ui.label(egui::RichText::new(unit).color(MUTED).size(12.5));
+            ui.label(egui::RichText::new(unit).color(muted()).size(12.5));
         }
     });
     ui.add_space(3.0);
 }
 
 fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
-    card(ui, "负载与电源", |ui| {
+    form_card(ui, "负载与电源", |ui| {
         let m_opts: Vec<(String, String)> = std
             .materials
             .iter()
@@ -229,7 +225,7 @@ fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
         combo_row(ui, "敷设方式", &w_opts, &mut inp.method);
         ui.add_space(4.0);
         ui.horizontal(|ui| {
-            ui.add_sized([112.0, 18.0], egui::Label::new(muted("相数")));
+            ui.add_sized([112.0, 18.0], egui::Label::new(soft("相数")));
             let sel = if inp.phases == 3 { 0 } else { 1 };
             if let Some(i) = crate::ui::segmented(ui, &["三相", "单相"], sel) {
                 if i == 0 {
@@ -246,11 +242,11 @@ fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
         drag_row(ui, "负载功率", &mut inp.load_kw, 0.5, 0.1..=3000.0, "kW");
         drag_row(ui, "功率因数", &mut inp.power_factor, 0.01, 0.3..=1.0, "");
         ui.horizontal(|ui| {
-            ui.add_sized([112.0, 18.0], egui::Label::new(muted("负载类型")));
+            ui.add_sized([112.0, 18.0], egui::Label::new(soft("负载类型")));
             ui.checkbox(&mut inp.load_is_motor, "电动机（直接启动）");
         });
     });
-    card(ui, "线路条件", |ui| {
+    form_card(ui, "线路条件", |ui| {
         drag_row(ui, "线路长度", &mut inp.length_m, 1.0, 0.5..=3000.0, "m");
         drag_row(ui, "环境温度", &mut inp.ambient_c, 1.0, -10.0..=70.0, "℃");
         drag_row(ui, "并排回路数", &mut inp.grouped, 1.0, 1.0..=30.0, "回");
@@ -259,7 +255,7 @@ fn form(ui: &mut egui::Ui, std: &StandardsFile, inp: &mut InputState) {
     ui.add_space(2.0);
     ui.label(
         egui::RichText::new(format!("数据来源：{}", std.source_note))
-            .color(MUTED)
+            .color(muted())
             .size(11.5),
     );
 }
@@ -272,7 +268,7 @@ fn kv_line(ui: &mut egui::Ui, k: &str, v: &str, col: egui::Color32) {
     ui.horizontal_wrapped(|ui| {
         ui.label(
             egui::RichText::new(format!("{k}："))
-                .color(FAINT_TEXT)
+                .color(faint_text())
                 .size(13.0),
         );
         ui.label(egui::RichText::new(v).color(col).size(13.5));
@@ -282,17 +278,17 @@ fn kv_line(ui: &mut egui::Ui, k: &str, v: &str, col: egui::Color32) {
 fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
     // 汇总数字
     ui.horizontal(|ui| {
-        stat(ui, "计算电流 Ib", &format!("{:.1} A", r.load_current_a), TEXT);
+        stat(ui, "计算电流 Ib", &format!("{:.1} A", r.load_current_a), text());
         ui.add_space(22.0);
-        stat(ui, "温度校正", &format!("×{:.2}", r.derate_temp), MUTED);
+        stat(ui, "温度校正", &format!("×{:.2}", r.derate_temp), muted());
         ui.add_space(22.0);
-        stat(ui, "并排校正", &format!("×{:.2}", r.derate_group), MUTED);
+        stat(ui, "并排校正", &format!("×{:.2}", r.derate_group), muted());
     });
     ui.add_space(12.0);
 
     if let Some(c) = &r.selected {
         egui::Frame::new()
-            .fill(CARD)
+            .fill(card())
             .stroke(border(20))
             .corner_radius(12)
             .inner_margin(16)
@@ -302,7 +298,7 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
                 ui.horizontal(|ui| {
                     ui.label(
                         crate::theme::b(&c.size_label)
-                            .color(OK_GREEN)
+                            .color(ok_green())
                             .size(28.0),
                     );
                     ui.add_space(12.0);
@@ -311,7 +307,7 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
                             "载流量 {} A · 校正后 {:.1} A",
                             c.ampacity_base, c.ampacity_corrected
                         ))
-                        .color(TEXT)
+                        .color(text())
                         .size(14.0),
                     );
                 });
@@ -320,13 +316,13 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
                     ui,
                     "配套空开",
                     &format!("≤ {:.0} A 档（In ≤ Iz 配合）", c.breaker_a),
-                    TEXT,
+                    text(),
                 );
                 let vd_ok = c.vd_pct <= inp.vd_limit_pct + 1e-9;
                 ui.horizontal_wrapped(|ui| {
                     ui.label(
                         egui::RichText::new("电压降：")
-                            .color(FAINT_TEXT)
+                            .color(faint_text())
                             .size(13.0),
                     );
                     ui.label(
@@ -336,13 +332,13 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
                             c.vd_pct,
                             fmt_limit(inp.vd_limit_pct)
                         ))
-                        .color(TEXT)
+                        .color(text())
                         .size(13.5),
                     );
                     crate::ui::pill(
                         ui,
                         if vd_ok { "满足" } else { "超限" },
-                        if vd_ok { OK_GREEN } else { AMBER },
+                        if vd_ok { ok_green() } else { amber() },
                     );
                 });
             });
@@ -350,7 +346,7 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
     } else {
         ui.label(
             egui::RichText::new("⚠ 在当前条件下未能选出合适截面（见下方说明）")
-                .color(AMBER)
+                .color(amber())
                 .size(15.0),
         );
         ui.add_space(8.0);
@@ -365,7 +361,7 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
             .striped(true)
             .show(ui, |ui| {
                 for h in ["截面", "载流量（校正后）", "空开", "压降"] {
-                    ui.label(egui::RichText::new(h).color(MUTED).size(12.5));
+                    ui.label(egui::RichText::new(h).color(muted()).size(12.5));
                 }
                 ui.end_row();
                 for c in &r.alternatives {
@@ -385,20 +381,20 @@ fn result_view(ui: &mut egui::Ui, inp: &InputState, r: &CalcResult) {
         crate::ui::section(ui, "可选电缆型号");
         ui.add_space(3.0);
         for t in &r.suggested_types {
-            ui.label(egui::RichText::new(format!("· {t}")).color(TEXT).size(13.5));
+            ui.label(egui::RichText::new(format!("· {t}")).color(text()).size(13.5));
             ui.add_space(2.0);
         }
         ui.add_space(10.0);
     }
 
     for w in &r.warnings {
-        ui.label(egui::RichText::new(format!("⚠ {w}")).color(AMBER).size(13.5));
+        ui.label(egui::RichText::new(format!("⚠ {w}")).color(amber()).size(13.5));
         ui.add_space(3.0);
     }
     if !r.notes.is_empty() {
         ui.add_space(2.0);
         for n in &r.notes {
-            ui.label(egui::RichText::new(format!("· {n}")).color(MUTED).size(12.5));
+            ui.label(egui::RichText::new(format!("· {n}")).color(muted()).size(12.5));
             ui.add_space(2.0);
         }
     }

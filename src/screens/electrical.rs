@@ -108,7 +108,7 @@ webp_table!(full_bytes, "full");
 
 pub fn show(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
     if s.items.is_empty() {
-        ui.label(egui::RichText::new("元件数据缺失").color(AMBER));
+        ui.label(egui::RichText::new("元件数据缺失").color(amber()));
         return;
     }
     match s.selected {
@@ -166,7 +166,7 @@ fn list_view(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
                         ui.painter().rect_filled(
                             rect,
                             egui::CornerRadius::same(12),
-                            CARD.lerp_to_gamma(CARD_HOVER, t),
+                            card().lerp_to_gamma(card_hover(), t),
                         );
                         ui.painter().rect_stroke(
                             rect,
@@ -191,7 +191,7 @@ fn list_view(s: &mut ElectricalScreen, ui: &mut egui::Ui) {
                             egui::Align2::CENTER_CENTER,
                             name,
                             egui::FontId::proportional(14.5),
-                            TEXT,
+                            text(),
                         );
                         if resp.hovered() {
                             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
@@ -219,14 +219,14 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
         if ui.button("← 返回图库").clicked() {
             back = true;
         }
-        ui.label(egui::RichText::new(group).color(ACCENT).size(13.0).strong());
+        ui.label(egui::RichText::new(group).color(accent()).size(13.0).strong());
     });
     ui.add_space(6.0);
     egui::ScrollArea::vertical()
         .id_salt("elec_detail")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            ui.label(crate::theme::b(name).size(24.0).color(TEXT));
+            ui.label(crate::theme::b(name).size(24.0).color(text()));
             ui.add_space(10.0);
             ui.horizontal_top(|ui| {
                 // 左：渲染图（浅底圆角框）
@@ -243,7 +243,7 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
                                     .corner_radius(6.0),
                             );
                         } else {
-                            ui.label(egui::RichText::new("（图片不可用）").color(MUTED));
+                            ui.label(egui::RichText::new("（图片不可用）").color(muted()));
                         }
                     });
                 ui.add_space(16.0);
@@ -252,7 +252,7 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
                     ui.set_max_width(560.0);
                     crate::ui::section(ui, "用途与原理");
                     ui.add_space(3.0);
-                    ui.label(egui::RichText::new(summary).size(14.5).color(TEXT));
+                    ui.label(egui::RichText::new(summary).size(14.5).color(text()));
                     ui.add_space(12.0);
                     crate::ui::section(ui, "工程要点");
                     for (n, tip) in tips.iter().enumerate() {
@@ -260,7 +260,7 @@ fn detail_view(s: &mut ElectricalScreen, ui: &mut egui::Ui, i: usize) {
                         ui.label(
                             egui::RichText::new(format!("{}. {}", n + 1, tip))
                                 .size(14.0)
-                                .color(TEXT),
+                                .color(text()),
                         );
                     }
                 });

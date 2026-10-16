@@ -29,6 +29,7 @@ pub struct Unit {
 
 /// 一个换算类别（长度 / 压力 / 功率 / …）。
 pub struct Category {
+    #[allow(dead_code)]
     pub id: &'static str,
     pub name: &'static str,
     pub units: Vec<Unit>,

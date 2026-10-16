@@ -86,30 +86,30 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
         ui.add_space(20.0);
         ui.label(
             egui::RichText::new("⚠ 报警库加载失败")
-                .color(AMBER)
+                .color(amber())
                 .size(16.0)
                 .strong(),
         );
         ui.add_space(6.0);
-        ui.label(egui::RichText::new(err).color(MUTED));
+        ui.label(egui::RichText::new(err).color(muted()));
         return;
     }
     let Some(db) = &s.db else {
         ui.add_space(20.0);
-        ui.label(egui::RichText::new("报警库加载中…").color(MUTED).size(15.0));
+        ui.label(egui::RichText::new("报警库加载中…").color(muted()).size(15.0));
         return;
     };
 
     // —— 搜索与筛选 ——
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new("搜索").color(MUTED).size(13.0));
+        ui.label(egui::RichText::new("搜索").color(muted()).size(13.0));
         ui.add(
             egui::TextEdit::singleline(&mut s.q)
                 .hint_text("报警码 / 名称 / 型号 / 原因…")
                 .desired_width(240.0),
         );
         ui.add_space(10.0);
-        ui.label(egui::RichText::new("品牌").color(MUTED).size(13.0));
+        ui.label(egui::RichText::new("品牌").color(muted()).size(13.0));
         if chip(ui, s.brand.is_none(), "全部") {
             s.brand = None;
         }
@@ -119,7 +119,7 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
             }
         }
         ui.add_space(10.0);
-        ui.label(egui::RichText::new("类别").color(MUTED).size(13.0));
+        ui.label(egui::RichText::new("类别").color(muted()).size(13.0));
         if chip(ui, s.category.is_none(), "全部") {
             s.category = None;
         }
@@ -143,7 +143,7 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
     ui.add_space(6.0);
     ui.label(
         egui::RichText::new(format!("共 {} 条", s.results.len()))
-            .color(FAINT_TEXT)
+            .color(faint_text())
             .size(12.0),
     );
     ui.add_space(4.0);
@@ -181,7 +181,7 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
                     } else {
                         ui.add_space(24.0);
                         ui.label(
-                            egui::RichText::new("← 从左侧选择一条报警查看详情").color(MUTED),
+                            egui::RichText::new("← 从左侧选择一条报警查看详情").color(muted()),
                         );
                     }
                 });
@@ -211,7 +211,7 @@ fn row(ui: &mut egui::Ui, selected: bool, code: &str, name: &str, tag: &str) -> 
     let fill = if selected {
         accent_soft(42)
     } else {
-        egui::Color32::TRANSPARENT.lerp_to_gamma(egui::Color32::from_white_alpha(9), t)
+        row_hover(t)
     };
     if selected || t > 0.0 {
         ui.painter()
@@ -222,21 +222,21 @@ fn row(ui: &mut egui::Ui, selected: bool, code: &str, name: &str, tag: &str) -> 
         egui::Align2::LEFT_TOP,
         trunc(code, 28),
         egui::FontId::monospace(12.5),
-        ACCENT,
+        accent(),
     );
     ui.painter().text(
         rect.left_top() + egui::vec2(12.0, 26.0),
         egui::Align2::LEFT_TOP,
         trunc(name, 24),
         egui::FontId::proportional(13.0),
-        if selected { egui::Color32::WHITE } else { TEXT },
+        if selected { egui::Color32::WHITE } else { text() },
     );
     ui.painter().text(
         rect.right_top() + egui::vec2(-12.0, 8.0),
         egui::Align2::RIGHT_TOP,
         trunc(tag, 10),
         egui::FontId::proportional(11.0),
-        FAINT_TEXT,
+        faint_text(),
     );
     resp
 }
@@ -246,7 +246,7 @@ fn detail(ui: &mut egui::Ui, db: &AlarmDb, idx: u32, show_source: &mut bool) {
     let a: &Alarm = &db.alarms[idx as usize];
     let cat = db.catalog(a);
 
-    ui.label(crate::theme::b(&a.title).size(19.0).color(TEXT));
+    ui.label(crate::theme::b(&a.title).size(19.0).color(text()));
     ui.add_space(4.0);
     ui.horizontal_wrapped(|ui| {
         meta(ui, "品牌", &cat.brand);
@@ -276,7 +276,7 @@ fn detail(ui: &mut egui::Ui, db: &AlarmDb, idx: u32, show_source: &mut bool) {
                 show_source,
                 egui::RichText::new("显示原始表格行")
                     .size(12.5)
-                    .color(MUTED),
+                    .color(muted()),
             );
             if *show_source {
                 for p in provs {
@@ -288,7 +288,7 @@ fn detail(ui: &mut egui::Ui, db: &AlarmDb, idx: u32, show_source: &mut bool) {
                             sheet.map(|x| x.name.as_str()).unwrap_or("-"),
                             p.row
                         ))
-                        .color(MUTED)
+                        .color(muted())
                         .size(12.0),
                     );
                     let headers = sheet.map(|x| x.headers.as_slice()).unwrap_or_default();
@@ -299,8 +299,8 @@ fn detail(ui: &mut egui::Ui, db: &AlarmDb, idx: u32, show_source: &mut bool) {
                         .show(ui, |ui| {
                             for (n, c) in p.cells.iter().enumerate() {
                                 let h = headers.get(n).map(|s| s.as_str()).unwrap_or("");
-                                ui.label(egui::RichText::new(h).color(MUTED).size(12.0));
-                                ui.label(egui::RichText::new(c).color(TEXT).size(12.5));
+                                ui.label(egui::RichText::new(h).color(muted()).size(12.0));
+                                ui.label(egui::RichText::new(c).color(text()).size(12.5));
                                 ui.end_row();
                             }
                         });
@@ -316,8 +316,8 @@ fn meta(ui: &mut egui::Ui, k: &str, v: &str) {
     if v.trim().is_empty() || v.trim() == "/" {
         return;
     }
-    ui.label(egui::RichText::new(format!("{k}：")).color(FAINT_TEXT).size(12.5));
-    ui.label(egui::RichText::new(v).color(MUTED).size(12.5));
+    ui.label(egui::RichText::new(format!("{k}：")).color(faint_text()).size(12.5));
+    ui.label(egui::RichText::new(v).color(muted()).size(12.5));
     ui.add_space(12.0);
 }
 
@@ -326,8 +326,8 @@ fn section(ui: &mut egui::Ui, title: &str, body: &str) {
     if b.is_empty() || b == "/" {
         return;
     }
-    ui.label(crate::theme::b(title).size(13.0).color(MUTED));
+    ui.label(crate::theme::b(title).size(13.0).color(muted()));
     ui.add_space(3.0);
-    ui.label(egui::RichText::new(b).color(TEXT).size(14.0));
+    ui.label(egui::RichText::new(b).color(text()).size(14.0));
     ui.add_space(9.0);
 }
