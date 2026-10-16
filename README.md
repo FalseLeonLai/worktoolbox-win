@@ -100,3 +100,4 @@ cargo run
   - `WTB_START_SCREEN=alarm|electrical|units|comms|cable|about` —— 启动到指定页面
   - `WTB_THEME=dark|light` —— 指定初始主题
   - `WTB_QUERY=234` —— 预填报警搜索词
+  - `WTB_SERIES=DDR系列` —— 预填系列筛选

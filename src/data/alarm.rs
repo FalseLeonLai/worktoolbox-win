@@ -78,10 +78,16 @@ impl AlarmDb {
         &self.catalogs[a.catalog as usize]
     }
 
-    /// 搜索：空格分词（全部命中）；brand / category 精确过滤（None = 不限）。
+    /// 搜索：空格分词（全部命中）；brand / category / series 精确过滤（None = 不限）。
     /// 「码式查询」（无空格、含数字、仅由码字符构成，如 234 / er.234 / h00-00）只按
     /// 报警码与名称匹配，避免原因文字中的跨码引用造成误报；若无结果则退回全文检索。
-    pub fn search(&self, q: &str, brand: Option<&str>, category: Option<&str>) -> Vec<u32> {
+    pub fn search(
+        &self,
+        q: &str,
+        brand: Option<&str>,
+        category: Option<&str>,
+        series: Option<&str>,
+    ) -> Vec<u32> {
         let ql = q.trim().to_lowercase();
         let code_like = !ql.is_empty()
             && !ql.chars().any(char::is_whitespace)
@@ -101,6 +107,11 @@ impl AlarmDb {
                 }
                 if let Some(c) = category {
                     if cat.category != c {
+                        continue;
+                    }
+                }
+                if let Some(sr) = series {
+                    if cat.series != sr {
                         continue;
                     }
                 }
@@ -155,6 +166,27 @@ impl AlarmDb {
     pub fn categories(&self) -> Vec<String> {
         dedup(self.catalogs.iter().map(|c| c.category.clone()).collect())
     }
+
+    /// 系列列表（按当前品牌 / 类别过滤；保持目录顺序、去重）
+    pub fn series_list(&self, brand: Option<&str>, category: Option<&str>) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for c in &self.catalogs {
+            if let Some(b) = brand {
+                if c.brand != b {
+                    continue;
+                }
+            }
+            if let Some(k) = category {
+                if c.category != k {
+                    continue;
+                }
+            }
+            if !c.series.is_empty() && !out.contains(&c.series) {
+                out.push(c.series.clone());
+            }
+        }
+        out
+    }
 }
 
 fn dedup(v: Vec<String>) -> Vec<String> {
@@ -187,7 +219,7 @@ mod tests {
 
         // 回归：多码拆分（原表 "Er.220：内部故障\nEr.234：飞车" 合并行）
         // 1) 检索 234 不应命中任何含 220 的码；应含 Er.234
-        let h234 = db.search("234", None, None);
+        let h234 = db.search("234", None, None, None);
         assert!(!h234.is_empty(), "搜索 234 应有结果");
         assert!(
             h234.iter().any(|&i| db.alarms[i as usize].code_key.contains("234")),
@@ -198,7 +230,7 @@ mod tests {
             "搜索 234 不应命中 220 记录"
         );
         // 2) Er.220 名称已清洗（不带第二码、无换行）
-        let h220 = db.search("er.220", None, None);
+        let h220 = db.search("er.220", None, None, None);
         let a220s: Vec<_> = h220
             .iter()
             .map(|&i| &db.alarms[i as usize])
@@ -215,8 +247,24 @@ mod tests {
         );
 
         // 抽样：搜索 & 数据链路
-        let hits = db.search("sto", None, None);
+        let hits = db.search("sto", None, None, None);
         assert!(!hits.is_empty(), "搜索 'sto' 应有结果");
+
+        // 系列过滤：DDR系列 + 234
+        let h_ddr = db.search("234", None, None, Some("DDR系列"));
+        assert!(!h_ddr.is_empty(), "DDR 系列下搜索 234 应有结果");
+        assert!(
+            h_ddr
+                .iter()
+                .all(|&i| db.catalog(&db.alarms[i as usize]).series == "DDR系列"),
+            "系列过滤后应全部为 DDR系列"
+        );
+        // 系列列表联动
+        let all_series = db.series_list(None, None);
+        assert!(all_series.contains(&"DDR系列".to_string()));
+        let hc_series = db.series_list(Some("汇川"), None);
+        assert!(hc_series.contains(&"DDR系列".to_string()));
+        assert!(hc_series.len() <= all_series.len());
         let idx = hits[0];
         let alarm = &db.alarms[idx as usize];
         let cat = db.catalog(alarm);

@@ -13,8 +13,9 @@ pub struct AlarmScreen {
     pub q: String,
     pub brand: Option<String>,
     pub category: Option<String>,
+    pub series: Option<String>,
     results: Vec<u32>,
-    last_key: Option<(String, Option<String>, Option<String>)>,
+    last_key: Option<(String, Option<String>, Option<String>, Option<String>)>,
     pub selected: Option<u32>,
     pub show_source: bool,
 }
@@ -37,6 +38,8 @@ impl AlarmScreen {
             q: std::env::var("WTB_QUERY").unwrap_or_default(),
             brand: None,
             category: None,
+            // 调试/截图用：WTB_SERIES 预填系列筛选
+            series: std::env::var("WTB_SERIES").ok().filter(|v| !v.is_empty()),
             results: Vec::new(),
             last_key: None,
             selected: None,
@@ -131,10 +134,28 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
         }
     });
 
+    // 系列选项（随品牌 / 类别联动；当前选择失效时自动清除）
+    let series_opts = db.series_list(s.brand.as_deref(), s.category.as_deref());
+    if let Some(cur) = &s.series {
+        if !series_opts.contains(cur) {
+            s.series = None;
+        }
+    }
+
     // 条件变化时重算
-    let key = (s.q.clone(), s.brand.clone(), s.category.clone());
+    let key = (
+        s.q.clone(),
+        s.brand.clone(),
+        s.category.clone(),
+        s.series.clone(),
+    );
     if s.last_key.as_ref() != Some(&key) {
-        s.results = db.search(&s.q, s.brand.as_deref(), s.category.as_deref());
+        s.results = db.search(
+            &s.q,
+            s.brand.as_deref(),
+            s.category.as_deref(),
+            s.series.as_deref(),
+        );
         s.last_key = Some(key);
         if s.selected.map(|i| !s.results.contains(&i)).unwrap_or(true) {
             s.selected = s.results.first().copied();
@@ -142,11 +163,30 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
     }
 
     ui.add_space(6.0);
-    ui.label(
-        egui::RichText::new(format!("共 {} 条", s.results.len()))
-            .color(faint_text())
-            .size(12.0),
-    );
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("系列").color(muted()).size(13.0));
+        let cur = s.series.clone().unwrap_or_else(|| "全部".to_string());
+        egui::ComboBox::from_id_salt("alarm_series")
+            .selected_text(egui::RichText::new(cur).size(13.0))
+            .width(190.0)
+            .show_ui(ui, |ui| {
+                if ui.selectable_label(s.series.is_none(), "全部").clicked() {
+                    s.series = None;
+                }
+                for o in &series_opts {
+                    let sel = s.series.as_deref() == Some(o.as_str());
+                    if ui.selectable_label(sel, o).clicked() {
+                        s.series = Some(o.clone());
+                    }
+                }
+            });
+        ui.add_space(14.0);
+        ui.label(
+            egui::RichText::new(format!("共 {} 条", s.results.len()))
+                .color(faint_text())
+                .size(12.0),
+        );
+    });
     ui.add_space(4.0);
 
     // —— 左列表 | 右详情 ——
