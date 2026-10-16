@@ -89,3 +89,11 @@
 - 交付：`deliver/工作工具箱-v1.0-Windows.zip`（12.1MB；exe sha256 05bd5fac…8399a）
 - 构建/截图脚本：`tools/screenshot.sh`（Xvfb 渲染截图）、`tools/package.sh`（一键打包）
 - 界面均已 Xvfb 渲染目检：首页 / 报警 / 元件列表+详情 / 单位换算 / 通信两页 / 线缆计算
+
+## 9. v1.1 UI 重构（2026-10-16 12:14）✅
+
+- 全新暗色设计系统：令牌化色板 / 三级文字层次 / 1px 半透明描边体系 / **真字重家族**（msyhbd·Noto CJK Bold）
+- 自绘组件库 `src/ui.rs`：胶囊按钮 / 分段控件 / 状态胶囊 / 卡片 / 大数字 / 软分隔线（全部 0.12s 悬停动画）
+- 全页面重构：顶栏（logo+面包屑）、首页（字形方块卡片）、报警 / 单位 / 元件 / 通信 / 线缆 / 关于
+- 流程示范：`feat/ui-refactor` 分支 → PR #1 → 合并 main；`docs/screenshots/` 已更新
+- 新技能 `egui-ui-polish`（供后续 UI 美化任务复用）
