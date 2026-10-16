@@ -33,7 +33,8 @@ impl AlarmScreen {
             slot,
             db: None,
             load_err: None,
-            q: String::new(),
+            // 调试/截图用：WTB_QUERY 预填搜索词
+            q: std::env::var("WTB_QUERY").unwrap_or_default(),
             brand: None,
             category: None,
             results: Vec::new(),
