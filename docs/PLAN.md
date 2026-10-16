@@ -124,3 +124,9 @@
   中文/多词查询仍全文检索（原因/措施可搜）
 - 新增回归测试：234 不命中 220、Er.220 名称已清洗（59 → 56 条精确结果）
 - `fix/alarm-multicode-search` 分支 → PR
+
+## 13. v1.4.0 系列筛选（2026-10-16）✅
+
+- 报警码查询新增「系列」筛选：结果行下拉选择，随品牌 / 类别联动；选择失效自动清除
+- 数据层：search() 增加 series 过滤；新增 series_list()；回归测试（DDR系列 × 234 → 1 条）
+- `feat/alarm-series-filter` 分支 → PR → main；发布 GitHub Release **v1.4.0**
