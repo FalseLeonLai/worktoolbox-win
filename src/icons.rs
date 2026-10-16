@@ -57,6 +57,7 @@ pub fn draw(
 }
 
 /// 图标按钮：悬停变色 + 手型指针（返回 Response，可挂 .on_hover_text）
+#[allow(dead_code)]
 pub fn button(
     ui: &mut egui::Ui,
     name: &str,
