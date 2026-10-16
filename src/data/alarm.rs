@@ -78,32 +78,50 @@ impl AlarmDb {
         &self.catalogs[a.catalog as usize]
     }
 
-    /// 搜索：q 支持空格分词（全部命中）；brand / category 为精确过滤（None = 不限）
+    /// 搜索：空格分词（全部命中）；brand / category 精确过滤（None = 不限）。
+    /// 「码式查询」（无空格、含数字、仅由码字符构成，如 234 / er.234 / h00-00）只按
+    /// 报警码与名称匹配，避免原因文字中的跨码引用造成误报；若无结果则退回全文检索。
     pub fn search(&self, q: &str, brand: Option<&str>, category: Option<&str>) -> Vec<u32> {
-        let terms: Vec<String> = q
-            .to_lowercase()
-            .split_whitespace()
-            .map(|s| s.to_string())
-            .collect();
+        let ql = q.trim().to_lowercase();
+        let code_like = !ql.is_empty()
+            && !ql.chars().any(char::is_whitespace)
+            && ql.chars().any(|c| c.is_ascii_digit())
+            && ql.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '/'));
         let mut out = Vec::new();
-        for (i, a) in self.alarms.iter().enumerate() {
-            let cat = &self.catalogs[a.catalog as usize];
-            if let Some(b) = brand {
-                if cat.brand != b {
-                    continue;
+        let mut broad = false;
+        loop {
+            out.clear();
+            for (i, a) in self.alarms.iter().enumerate() {
+                let cat = &self.catalogs[a.catalog as usize];
+                if let Some(b) = brand {
+                    if cat.brand != b {
+                        continue;
+                    }
+                }
+                if let Some(c) = category {
+                    if cat.category != c {
+                        continue;
+                    }
+                }
+                let hit = if ql.is_empty() {
+                    true
+                } else if code_like && !broad {
+                    a.code_key.contains(&ql) || a.name.to_lowercase().contains(&ql)
+                } else {
+                    ql.split_whitespace()
+                        .all(|t| a.search.contains(t) || a.code_key.contains(t))
+                };
+                if hit {
+                    out.push(i as u32);
                 }
             }
-            if let Some(c) = category {
-                if cat.category != c {
-                    continue;
-                }
+            // 码式查询无结果 → 退回全文检索（可搜到如 h00-00 这类参数名）
+            if code_like && !broad && out.is_empty() {
+                broad = true;
+                continue;
             }
-            if terms
-                .iter()
-                .all(|t| a.search.contains(t.as_str()) || a.code_key.contains(t.as_str()))
-            {
-                out.push(i as u32);
-            }
+            break;
         }
         out
     }
@@ -163,9 +181,38 @@ mod tests {
         }
         let db = AlarmDb::load(p).expect("alarms.bin 加载失败");
         assert_eq!(db.catalogs.len(), 129, "catalogs 数量不符");
-        assert_eq!(db.alarms.len(), 13754, "alarms 数量不符");
-        assert_eq!(db.details.len(), 14156, "details 数量不符");
-        assert_eq!(db.provenance.len(), 14210, "provenance 数量不符");
+        assert_eq!(db.alarms.len(), 13765, "alarms 数量不符");
+        assert_eq!(db.details.len(), 14167, "details 数量不符");
+        assert_eq!(db.provenance.len(), 14221, "provenance 数量不符");
+
+        // 回归：多码拆分（原表 "Er.220：内部故障\nEr.234：飞车" 合并行）
+        // 1) 检索 234 不应命中任何含 220 的码；应含 Er.234
+        let h234 = db.search("234", None, None);
+        assert!(!h234.is_empty(), "搜索 234 应有结果");
+        assert!(
+            h234.iter().any(|&i| db.alarms[i as usize].code_key.contains("234")),
+            "搜索 234 应包含 Er.234 记录"
+        );
+        assert!(
+            h234.iter().all(|&i| !db.alarms[i as usize].code_key.contains("220")),
+            "搜索 234 不应命中 220 记录"
+        );
+        // 2) Er.220 名称已清洗（不带第二码、无换行）
+        let h220 = db.search("er.220", None, None);
+        let a220s: Vec<_> = h220
+            .iter()
+            .map(|&i| &db.alarms[i as usize])
+            .filter(|a| a.code_key == "er.220")
+            .collect();
+        assert!(!a220s.is_empty(), "搜索 er.220 应有结果");
+        assert!(
+            a220s.iter().any(|a| a.name == "内部故障"),
+            "应存在清洗后的 Er.220 内部故障"
+        );
+        assert!(
+            a220s.iter().all(|a| !a.name.contains("234") && !a.name.contains('\n')),
+            "Er.220 名称不应再包含 234 / 换行"
+        );
 
         // 抽样：搜索 & 数据链路
         let hits = db.search("sto", None, None);
