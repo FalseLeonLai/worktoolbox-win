@@ -3,7 +3,7 @@
 用 **Rust + [egui/eframe](https://github.com/emilk/egui)** 重写的「工作工具箱」Windows 桌面版：
 **单文件、免安装、完全离线**，面向电气 / 工控现场的日常速查与选型计算。
 
-当前版本 **v1.4.2** ｜ 黑色高级主题（默认）+ 浅色主题一键切换 ｜ 左侧一级菜单导航
+当前版本 **v1.4.3** ｜ 黑色高级主题（默认）+ 浅色主题一键切换 ｜ 左侧一级菜单导航
 
 ![报警码查询（深色主题）](docs/screenshots/alarm_dark.png)
 ![线缆选型计算（深色主题）](docs/screenshots/cable_dark.png)
@@ -95,7 +95,7 @@ cargo run
 
 ## 更新日志
 
-见 [CHANGELOG.md](CHANGELOG.md)（v0.1 → v1.4.2 全部迭代）。
+见 [CHANGELOG.md](CHANGELOG.md)（v0.1 → v1.4.3 全部迭代）。
 
 ## 开发建议
 

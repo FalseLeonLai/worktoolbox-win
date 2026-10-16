@@ -16,10 +16,32 @@ fn candidates() -> Vec<PathBuf> {
     v
 }
 
-/// 追加一行诊断信息（自动选择可写位置）
+/// 日志文件大小上限：超过后自动重置（正常使用每次启动仅 1 行，不会占用空间）
+const LOG_MAX_BYTES: u64 = 256 * 1024;
+/// 单条写入上限（防超大回溯一次写爆；按字符边界安全截断）
+const LINE_MAX_BYTES: usize = 100 * 1024;
+
+/// 追加一行诊断信息（自动选择可写位置；超过上限自动重置）
 pub fn write_line(s: &str) {
+    let s = if s.len() > LINE_MAX_BYTES {
+        let mut end = LINE_MAX_BYTES;
+        while !s.is_char_boundary(end) {
+            end -= 1;
+        }
+        &s[..end]
+    } else {
+        s
+    };
     for p in candidates() {
+        // 文件超过上限 → 先删除重置
+        let reset = std::fs::metadata(&p)
+            .map(|m| m.len() > LOG_MAX_BYTES)
+            .unwrap_or(false)
+            && std::fs::remove_file(&p).is_ok();
         if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&p) {
+            if reset {
+                let _ = writeln!(f, "---- 日志超过 256 KiB 上限，已自动重置 ----");
+            }
             let _ = writeln!(f, "{s}");
             return;
         }

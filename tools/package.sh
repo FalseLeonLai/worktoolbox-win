@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 打包 Windows v1.4.2 发布版：交叉编译 release → deliver/ 生成 zip（exe + 使用说明）
+# 打包 Windows v1.4.3 发布版：交叉编译 release → deliver/ 生成 zip（exe + 使用说明）
 set -eu
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -21,12 +21,12 @@ cp "$DELIVER/试试-Vulkan启动.bat" "$STAGE/试试-Vulkan启动.bat"
 cp "$DELIVER/试试-OpenGL启动.bat" "$STAGE/试试-OpenGL启动.bat"
 
 cd "$STAGE"
-rm -f "$DELIVER/工作工具箱-v1.4.2-Windows.zip"
-zip -r -9 "$DELIVER/工作工具箱-v1.4.2-Windows.zip" . >/dev/null
+rm -f "$DELIVER/工作工具箱-v1.4.3-Windows.zip"
+zip -r -9 "$DELIVER/工作工具箱-v1.4.3-Windows.zip" . >/dev/null
 cd "$DELIVER"
 rm -rf "$STAGE"
 
 echo "== 完成 =="
-ls -la "$DELIVER/工作工具箱-v1.4.2-Windows.zip"
+ls -la "$DELIVER/工作工具箱-v1.4.3-Windows.zip"
 file "$EXE"
 sha256sum "$EXE"
