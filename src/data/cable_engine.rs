@@ -111,6 +111,7 @@ pub struct CalcInput {
 #[derive(Debug, Clone, Default)]
 pub struct Candidate {
     pub size_label: String,
+    #[allow(dead_code)]
     pub mm2: f64,
     pub ampacity_base: f64,
     pub ampacity_corrected: f64,

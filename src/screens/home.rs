@@ -1,4 +1,5 @@
 use crate::app::{App, Screen};
+use crate::icons;
 use crate::theme::*;
 use crate::ui;
 use eframe::egui;
@@ -7,8 +8,8 @@ struct Item {
     title: &'static str,
     sub: &'static str,
     tag: &'static str,
-    glyph: &'static str,
-    color: egui::Color32,
+    icon: &'static str,
+    neutral: bool,
     screen: Screen,
 }
 
@@ -20,48 +21,48 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             title: "报警码查询",
             sub: "汇川 / 西门子 / 高创 · 伺服 · 变频器",
             tag: "13754 条",
-            glyph: "报",
-            color: ACCENT,
+            icon: "triangle-alert",
+            neutral: false,
             screen: Screen::Alarm,
         },
         Item {
             title: "电气元件",
             sub: "30 个常用元件图库与参考",
             tag: "",
-            glyph: "元",
-            color: egui::Color32::from_rgb(138, 180, 248),
+            icon: "circuit-board",
+            neutral: false,
             screen: Screen::Electrical,
         },
         Item {
             title: "单位换算",
             sub: "22 类工程量 / 电气单位",
             tag: "",
-            glyph: "换",
-            color: egui::Color32::from_rgb(124, 217, 165),
+            icon: "ruler",
+            neutral: false,
             screen: Screen::Units,
         },
         Item {
             title: "通信参考",
             sub: "PLC 数据类型 / 协议速查",
             tag: "",
-            glyph: "通",
-            color: egui::Color32::from_rgb(180, 151, 245),
+            icon: "radio-tower",
+            neutral: false,
             screen: Screen::Comms,
         },
         Item {
             title: "线缆选型计算",
             sub: "载流量 / 压降 / 保护配合",
             tag: "GB · IEC · UL",
-            glyph: "算",
-            color: egui::Color32::from_rgb(232, 195, 106),
+            icon: "cable",
+            neutral: false,
             screen: Screen::Cable,
         },
         Item {
             title: "关于",
             sub: "版本信息与说明",
             tag: "",
-            glyph: "关",
-            color: egui::Color32::from_rgb(139, 147, 167),
+            icon: "info",
+            neutral: true,
             screen: Screen::About,
         },
     ];
@@ -76,8 +77,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     };
     let spacing = 12.0_f32;
     let card_w = (avail - spacing * (cols as f32 - 1.0)) / cols as f32;
-    let card_h = 118.0_f32;
-    let sub_n = (((card_w - 150.0) / 13.5).floor() as usize).max(8);
+    let card_h = 120.0_f32;
+    let sub_n = (((card_w - 158.0) / 13.5).floor() as usize).max(8);
 
     for chunk in items.chunks(cols) {
         ui.horizontal(|ui| {
@@ -93,7 +94,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 ui.painter().rect_filled(
                     rect,
                     egui::CornerRadius::same(12),
-                    CARD.lerp_to_gamma(CARD_HOVER, t),
+                    card().lerp_to_gamma(card_hover(), t),
                 );
                 ui.painter().rect_stroke(
                     rect,
@@ -102,7 +103,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     egui::StrokeKind::Inside,
                 );
 
-                // 字形方块（柔和着色）
+                // 图标方块（单强调色；「关于」用中性色）
+                let tint = if item.neutral { faint_text() } else { accent() };
                 let sq = egui::Rect::from_min_size(
                     rect.left_top() + egui::vec2(16.0, (card_h - 46.0) / 2.0),
                     egui::vec2(46.0, 46.0),
@@ -110,14 +112,14 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 ui.painter().rect_filled(
                     sq,
                     egui::CornerRadius::same(12),
-                    tinted(item.color, (28.0 + 18.0 * t) as u8),
+                    tinted(tint, (24.0 + 16.0 * t) as u8),
                 );
-                ui.painter().text(
-                    sq.center(),
-                    egui::Align2::CENTER_CENTER,
-                    item.glyph,
-                    egui::FontId::new(20.0, b_font()),
-                    item.color,
+                icons::draw(
+                    ui.painter(),
+                    ui.ctx(),
+                    item.icon,
+                    sq.shrink(11.0),
+                    tint,
                 );
 
                 // 标题 / 副标题
@@ -126,35 +128,61 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     egui::pos2(tx, rect.center().y - 13.0),
                     egui::Align2::LEFT_CENTER,
                     item.title,
-                    egui::FontId::new(16.0, b_font()),
-                    TEXT,
+                    egui::FontId::new(16.5, b_font()),
+                    text(),
                 );
                 ui.painter().text(
                     egui::pos2(tx, rect.center().y + 12.0),
                     egui::Align2::LEFT_CENTER,
                     trunc(item.sub, sub_n),
-                    egui::FontId::proportional(12.5),
-                    MUTED,
+                    egui::FontId::proportional(13.0),
+                    muted(),
                 );
 
-                // 右上角标签 / 右侧箭头
+                // 右上角数据标签（软胶囊）
                 if !item.tag.is_empty() {
-                    ui.painter().text(
-                        rect.right_top() + egui::vec2(-14.0, 14.0),
-                        egui::Align2::RIGHT_TOP,
-                        item.tag,
-                        egui::FontId::proportional(11.0),
-                        FAINT_TEXT,
+                    let font = egui::FontId::proportional(11.0);
+                    let galley =
+                        ui.painter()
+                            .layout_no_wrap(item.tag.to_owned(), font, muted());
+                    let tw = galley.size().x;
+                    let tag_rect = egui::Rect::from_min_size(
+                        egui::pos2(rect.right() - 14.0 - tw - 14.0, rect.top() + 13.0),
+                        egui::vec2(tw + 14.0, 20.0),
+                    );
+                    ui.painter().rect_filled(
+                        tag_rect,
+                        egui::CornerRadius::same(10),
+                        well(),
+                    );
+                    ui.painter().rect_stroke(
+                        tag_rect,
+                        egui::CornerRadius::same(10),
+                        border(18),
+                        egui::StrokeKind::Inside,
+                    );
+                    ui.painter().galley(
+                        egui::pos2(tag_rect.left() + 7.0, tag_rect.top() + 3.0),
+                        galley,
+                        muted(),
                     );
                 }
-                ui.painter().text(
-                    rect.right_center() + egui::vec2(-18.0, 0.0),
-                    egui::Align2::CENTER_CENTER,
-                    "→",
-                    egui::FontId::proportional(16.0),
-                    MUTED.lerp_to_gamma(ACCENT, t),
+
+                // 右侧箭头（悬停渐变到强调色）
+                icons::draw(
+                    ui.painter(),
+                    ui.ctx(),
+                    "chevron-right",
+                    egui::Rect::from_center_size(
+                        rect.right_center() - egui::vec2(20.0, 0.0),
+                        egui::vec2(16.0, 16.0),
+                    ),
+                    muted().lerp_to_gamma(accent(), t),
                 );
 
+                if resp.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
                 if resp.clicked() {
                     app.screen = item.screen;
                 }

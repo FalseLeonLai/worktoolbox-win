@@ -6,6 +6,7 @@
 mod app;
 mod data;
 mod fonts;
+mod icons;
 mod screens;
 mod theme;
 mod ui;
@@ -28,6 +29,10 @@ fn main() -> eframe::Result {
         Box::new(|cc| {
             fonts::install(&cc.egui_ctx);
             theme::install(&cc.egui_ctx);
+            // 调试/截图用：WTB_THEME=dark 直接以暗色启动
+            if std::env::var("WTB_THEME").map(|v| v == "dark").unwrap_or(false) {
+                theme::set_dark(&cc.egui_ctx, true);
+            }
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(app::App::new(cc)))
         }),

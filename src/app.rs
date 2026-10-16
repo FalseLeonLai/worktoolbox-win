@@ -1,6 +1,7 @@
 use eframe::egui;
 
 use crate::screens::{about, alarm, cable, comms, electrical, home, units};
+use crate::theme;
 
 /// 主界面所在的"页面"
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -65,61 +66,69 @@ impl eframe::App for App {
         let bar = egui::Panel::top("top_bar")
             .frame(
                 egui::Frame::new()
-                    .fill(crate::theme::PANEL)
-                    .inner_margin(egui::Margin::symmetric(14, 11)),
+                    .fill(theme::panel())
+                    .inner_margin(egui::Margin::symmetric(14, 12)),
             )
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     if self.screen != Screen::Home {
-                        if crate::ui::ghost(ui, "← 返回") {
+                        if crate::ui::icon_button(ui, "arrow-left", 22.0)
+                            .on_hover_text("返回首页")
+                            .clicked()
+                        {
                             self.screen = Screen::Home;
                         }
                         ui.add_space(8.0);
                     }
                     crate::ui::logo_mark(ui, 26.0);
                     ui.add_space(9.0);
-                    ui.label(
-                        crate::theme::b("工作工具箱")
-                            .size(15.0)
-                            .color(crate::theme::TEXT),
-                    );
+                    ui.label(crate::theme::b("工作工具箱").size(15.0).color(theme::text()));
                     let name = screen_name(self.screen);
                     if !name.is_empty() {
                         ui.add_space(6.0);
                         ui.label(
                             egui::RichText::new("/")
-                                .color(crate::theme::FAINT_TEXT)
+                                .color(theme::faint_text())
                                 .size(13.0),
                         );
                         ui.label(
                             egui::RichText::new(name)
-                                .color(crate::theme::MUTED)
+                                .color(theme::muted())
                                 .size(13.0),
                         );
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(
-                            egui::RichText::new("v1.1")
-                                .color(crate::theme::FAINT_TEXT)
+                            egui::RichText::new("v1.2")
+                                .color(theme::faint_text())
                                 .size(12.0),
                         );
+                        ui.add_space(4.0);
+                        let (icon, tip) = if theme::is_dark() {
+                            ("sun", "切换到浅色主题")
+                        } else {
+                            ("moon", "切换到深色主题")
+                        };
+                        if crate::ui::icon_button(ui, icon, 22.0)
+                            .on_hover_text(tip)
+                            .clicked()
+                        {
+                            theme::toggle(ui.ctx());
+                        }
                     });
                 });
             });
         // 顶栏底部 1px 软分隔线
         let r = bar.response.rect;
-        ui.painter().hline(
-            r.left()..=r.right(),
-            r.bottom() - 0.5,
-            egui::Stroke::new(1.0, egui::Color32::from_white_alpha(14)),
-        );
+        ui.painter()
+            .hline(r.left()..=r.right(), r.bottom() - 0.5, theme::hairline());
 
         // —— 主内容区 ——
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::new()
-                    .fill(crate::theme::BG)
-                    .inner_margin(egui::Margin::same(16)),
+                    .fill(theme::bg())
+                    .inner_margin(egui::Margin::same(18)),
             )
             .show(ui, |ui| {
                 let screen = self.screen;

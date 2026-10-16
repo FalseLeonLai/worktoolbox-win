@@ -26,7 +26,7 @@ impl UnitsScreen {
 
 pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
     if s.cats.is_empty() {
-        ui.label(egui::RichText::new("单位数据缺失").color(AMBER));
+        ui.label(egui::RichText::new("单位数据缺失").color(amber()));
         return;
     }
     s.cat_idx = s.cat_idx.min(s.cats.len() - 1);
@@ -54,8 +54,7 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
                             let fill = if sel {
                                 accent_soft(42)
                             } else {
-                                egui::Color32::TRANSPARENT
-                                    .lerp_to_gamma(egui::Color32::from_white_alpha(9), t)
+                                row_hover(t)
                             };
                             ui.painter()
                                 .rect_filled(rect, egui::CornerRadius::same(8), fill);
@@ -65,7 +64,7 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
                             egui::Align2::LEFT_CENTER,
                             c.name,
                             egui::FontId::proportional(13.5),
-                            if sel { egui::Color32::WHITE } else { TEXT },
+                            if sel { egui::Color32::WHITE } else { text() },
                         );
                         if resp.clicked() && !sel {
                             s.cat_idx = i;
@@ -91,11 +90,11 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
             s.from_idx = s.from_idx.min(units.len() - 1);
             s.to_idx = s.to_idx.min(units.len() - 1);
 
-            ui.label(crate::theme::b(s.cats[s.cat_idx].name).size(20.0).color(TEXT));
+            ui.label(crate::theme::b(s.cats[s.cat_idx].name).size(20.0).color(text()));
             ui.add_space(10.0);
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("数值").color(MUTED).size(14.0));
+                ui.label(egui::RichText::new("数值").color(muted()).size(14.0));
                 ui.add(
                     egui::DragValue::new(&mut s.value)
                         .speed(1.0)
@@ -116,7 +115,7 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
                             ui.selectable_value(&mut s.from_idx, i, format!("{n}（{sym}）"));
                         }
                     });
-                ui.label(egui::RichText::new("→").color(ACCENT).size(18.0));
+                ui.label(egui::RichText::new("→").color(accent()).size(18.0));
                 egui::ComboBox::from_id_salt("units_to")
                     .width(200.0)
                     .selected_text(format!("{}（{}）", units[s.to_idx].0, units[s.to_idx].1))
@@ -133,20 +132,20 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
             let out = convert(from, to, s.value);
             ui.label(
                 egui::RichText::new(format!("{} {}", fmt_num(s.value), from.symbol))
-                    .color(MUTED)
+                    .color(muted())
                     .size(16.0),
             );
             ui.add_space(2.0);
             ui.label(
                 crate::theme::b(format!("= {} {}", fmt_num(out), to.symbol))
-                    .color(ACCENT)
+                    .color(accent())
                     .size(32.0),
             );
 
             ui.add_space(14.0);
             ui.separator();
             ui.add_space(4.0);
-            ui.label(crate::theme::b("本类别全部单位（按当前输入换算）").size(13.0).color(MUTED));
+            ui.label(crate::theme::b("本类别全部单位（按当前输入换算）").size(13.0).color(muted()));
             ui.add_space(4.0);
             egui::ScrollArea::vertical()
                 .id_salt("units_all")
@@ -158,20 +157,20 @@ pub fn show(s: &mut UnitsScreen, ui: &mut egui::Ui) {
                         .spacing([18.0, 4.0])
                         .striped(true)
                         .show(ui, |ui| {
-                            ui.label(egui::RichText::new("单位").color(MUTED).size(12.5));
-                            ui.label(egui::RichText::new("符号").color(MUTED).size(12.5));
-                            ui.label(egui::RichText::new("数值").color(MUTED).size(12.5));
+                            ui.label(egui::RichText::new("单位").color(muted()).size(12.5));
+                            ui.label(egui::RichText::new("符号").color(muted()).size(12.5));
+                            ui.label(egui::RichText::new("数值").color(muted()).size(12.5));
                             ui.end_row();
                             for u in &s.cats[s.cat_idx].units {
                                 let v = convert(from, u, s.value);
                                 ui.label(egui::RichText::new(u.name).size(13.5));
-                                ui.label(egui::RichText::new(u.symbol).color(MUTED).size(13.0));
+                                ui.label(egui::RichText::new(u.symbol).color(muted()).size(13.0));
                                 ui.label(
                                     egui::RichText::new(fmt_num(v))
                                         .color(if u.id == s.cats[s.cat_idx].units[s.to_idx].id {
-                                            ACCENT
+                                            accent()
                                         } else {
-                                            TEXT
+                                            text()
                                         })
                                         .size(13.5),
                                 );
