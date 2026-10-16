@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 打包 Windows v1.0 发布版：交叉编译 release → deliver/ 生成 zip（exe + 使用说明）
+# 打包 Windows v1.3.1 发布版：交叉编译 release → deliver/ 生成 zip（exe + 使用说明）
 set -eu
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -19,12 +19,12 @@ cp "$EXE" "$STAGE/工作工具箱.exe"
 cp "$DELIVER/使用说明.txt" "$STAGE/使用说明.txt"
 
 cd "$STAGE"
-rm -f "$DELIVER/工作工具箱-v1.0-Windows.zip"
-zip -r -9 "$DELIVER/工作工具箱-v1.0-Windows.zip" . >/dev/null
+rm -f "$DELIVER/工作工具箱-v1.3.1-Windows.zip"
+zip -r -9 "$DELIVER/工作工具箱-v1.3.1-Windows.zip" . >/dev/null
 cd "$DELIVER"
 rm -rf "$STAGE"
 
 echo "== 完成 =="
-ls -la "$DELIVER/工作工具箱-v1.0-Windows.zip"
+ls -la "$DELIVER/工作工具箱-v1.3.1-Windows.zip"
 file "$EXE"
 sha256sum "$EXE"
