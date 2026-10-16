@@ -22,6 +22,7 @@ pub fn section(ui: &mut egui::Ui, label: &str) {
 }
 
 /// 页头：标题 21px 粗体（浅色=藏青）+ 副标题
+#[allow(dead_code)]
 pub fn page_head(ui: &mut egui::Ui, title: &str, sub: &str) {
     ui.label(b(title).size(21.0).color(strong()));
     if !sub.is_empty() {
@@ -207,8 +208,59 @@ pub fn logo_mark(ui: &mut egui::Ui, size: f32) {
 }
 
 /// 顶栏图标按钮（悬停变色 + 手型指针）
+#[allow(dead_code)]
 pub fn icon_button(ui: &mut egui::Ui, name: &str, size: f32) -> egui::Response {
     icons::button(ui, name, size, muted(), text())
+}
+
+/// 侧栏一级菜单项：图标 + 文本；选中 = 强调软底 + 左侧指示条
+pub fn menu_item(ui: &mut egui::Ui, icon: &str, label: &str, selected: bool) -> bool {
+    let (rect, resp) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 36.0), egui::Sense::click());
+    let t = ui
+        .ctx()
+        .animate_bool_with_time(resp.id.with("hv"), resp.hovered(), 0.12);
+    let fill = if selected {
+        accent_soft(if is_dark() { 40 } else { 38 })
+    } else {
+        row_hover(t)
+    };
+    ui.painter()
+        .rect_filled(rect, egui::CornerRadius::same(9), fill);
+    if selected {
+        let bar = egui::Rect::from_min_size(
+            egui::pos2(rect.left() + 5.0, rect.top() + 10.0),
+            egui::vec2(3.0, rect.height() - 20.0),
+        );
+        ui.painter()
+            .rect_filled(bar, egui::CornerRadius::same(2), accent());
+    }
+    let tint = if selected {
+        accent()
+    } else {
+        muted().lerp_to_gamma(text(), t)
+    };
+    icons::draw(
+        ui.painter(),
+        ui.ctx(),
+        icon,
+        egui::Rect::from_min_size(
+            egui::pos2(rect.left() + 16.0, rect.center().y - 9.0),
+            egui::vec2(18.0, 18.0),
+        ),
+        tint,
+    );
+    ui.painter().text(
+        egui::pos2(rect.left() + 44.0, rect.center().y),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::new(14.0, medium_font()),
+        tint,
+    );
+    if resp.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+    }
+    resp.clicked()
 }
 
 fn b_font_id(size: f32) -> egui::FontId {

@@ -18,6 +18,7 @@ pub struct Pal {
     pub text: Color32,         // 主文字
     pub muted: Color32,        // 次级文字
     pub faint: Color32,        // 弱化文字
+    #[allow(dead_code)]
     pub strong: Color32,       // 标题（浅色=藏青）
     pub accent: Color32,       // 强调色（填充 / 文字两用）
     pub accent_hover: Color32, // 强调悬停
@@ -47,18 +48,18 @@ pub const LIGHT: Pal = Pal {
 };
 
 pub const DARK: Pal = Pal {
-    bg: Color32::from_rgb(15, 23, 42),             // #0F172A
-    panel: Color32::from_rgb(11, 18, 32),          // #0B1220
-    card: Color32::from_rgb(27, 35, 54),           // #1B2336
-    card_hover: Color32::from_rgb(34, 44, 66),     // #222C42
-    well: Color32::from_rgb(11, 18, 32),           // #0B1220
-    pressed: Color32::from_rgb(43, 58, 85),        // #2B3A55
-    text: Color32::from_rgb(248, 250, 252),        // #F8FAFC
-    muted: Color32::from_rgb(148, 163, 184),       // #94A3B8
-    faint: Color32::from_rgb(100, 116, 139),       // #64748B
-    strong: Color32::from_rgb(248, 250, 252),
-    accent: Color32::from_rgb(34, 197, 94),        // #22C55E
-    accent_hover: Color32::from_rgb(22, 163, 74),  // #16A34A
+    bg: Color32::from_rgb(10, 11, 14),             // #0A0B0E 主黑
+    panel: Color32::from_rgb(16, 17, 22),          // #101116 侧栏
+    card: Color32::from_rgb(20, 22, 27),           // #14161B
+    card_hover: Color32::from_rgb(27, 30, 36),     // #1B1E24
+    well: Color32::from_rgb(13, 14, 18),           // #0D0E12
+    pressed: Color32::from_rgb(35, 38, 46),        // #23262E
+    text: Color32::from_rgb(244, 244, 245),        // #F4F4F5
+    muted: Color32::from_rgb(161, 161, 170),       // #A1A1AA
+    faint: Color32::from_rgb(113, 113, 122),       // #71717A
+    strong: Color32::from_rgb(250, 250, 250),      // #FAFAFA
+    accent: Color32::from_rgb(52, 211, 153),       // #34D399
+    accent_hover: Color32::from_rgb(16, 185, 129), // #10B981
     on_accent: Color32::from_rgb(5, 46, 22),       // #052E16
     amber: Color32::from_rgb(251, 191, 36),        // #FBBF24
     ok: Color32::from_rgb(74, 222, 128),           // #4ADE80
@@ -67,7 +68,7 @@ pub const DARK: Pal = Pal {
 
 // ——————————————————————————— 模式切换 ———————————————————————————
 
-static IS_DARK: AtomicBool = AtomicBool::new(false);
+static IS_DARK: AtomicBool = AtomicBool::new(true);
 
 pub fn is_dark() -> bool {
     IS_DARK.load(Ordering::Relaxed)
@@ -101,6 +102,7 @@ pub fn well() -> Color32 { p().well }
 pub fn text() -> Color32 { p().text }
 pub fn muted() -> Color32 { p().muted }
 pub fn faint_text() -> Color32 { p().faint }
+#[allow(dead_code)]
 pub fn strong() -> Color32 { p().strong }
 pub fn accent() -> Color32 { p().accent }
 pub fn accent_hover() -> Color32 { p().accent_hover }

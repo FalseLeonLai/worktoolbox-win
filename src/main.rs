@@ -29,9 +29,11 @@ fn main() -> eframe::Result {
         Box::new(|cc| {
             fonts::install(&cc.egui_ctx);
             theme::install(&cc.egui_ctx);
-            // 调试/截图用：WTB_THEME=dark 直接以暗色启动
-            if std::env::var("WTB_THEME").map(|v| v == "dark").unwrap_or(false) {
-                theme::set_dark(&cc.egui_ctx, true);
+            // 调试/截图用：WTB_THEME=light|dark 指定初始主题（默认深色）
+            match std::env::var("WTB_THEME").unwrap_or_default().as_str() {
+                "light" => theme::set_dark(&cc.egui_ctx, false),
+                "dark" => theme::set_dark(&cc.egui_ctx, true),
+                _ => {}
             }
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(app::App::new(cc)))
