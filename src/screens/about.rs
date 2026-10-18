@@ -11,7 +11,7 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
             ui.label(crate::theme::b("工作工具箱 · Windows 版").size(23.0).color(text()));
             ui.add_space(2.0);
             ui.label(
-                egui::RichText::new("v1.4.3 · Rust + egui 重制 · 完全离线运行")
+                egui::RichText::new(concat!("v", env!("CARGO_PKG_VERSION"), " · Rust + egui 重制 · 可离线启动"))
                     .color(muted())
                     .size(13.5),
             );
@@ -25,6 +25,7 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
             bullet(ui, "电气元件：30 个常用元件的渲染图、用途原理与工程要点。");
             bullet(ui, "单位换算：22 个类别（含线规 AWG），支持单位对调与全类别对照。");
             bullet(ui, "通信参考：26 个 PLC 数据类型 + 8 类通信协议工程要点速查。");
+            bullet(ui, "网络与串口调试：TCP 客户端/服务端、UDP、串口、Modbus TCP/RTU 和经典 Siemens S7；HEX/文本收发与地址读写。");
             bullet(
                 ui,
                 "线缆计算：三套标准体系（国标 GB / 欧标 IEC·EN（CE） / 美标 UL·NEC），载流量选型、温度与并排校正、电压降校验、空开配合、型号建议。",

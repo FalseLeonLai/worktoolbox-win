@@ -5,6 +5,7 @@
 
 mod app;
 mod data;
+mod debug;
 mod diag;
 mod fonts;
 mod icons;

@@ -4,6 +4,7 @@
 
 | 脚本 | 用途 |
 | --- | --- |
+| `package-windows.ps1` | Windows PowerShell 7 本机构建单文件 EXE，静态 CRT，输出到 `target/delivery/`；`-Offline` 使用本地依赖缓存 |
 | `convert_alarms.py` | 把源 `alarms.sqlite` 转换为 `data/alarms.bin`（postcard 格式，与 `src/data/alarm.rs` 结构一一对应）。**v2 含数据清洗**：多码合并行拆分 / 名称换行合并 / 空码推导 / 检索文本重建 |
 | `gen_standards.py` | 生成 `data/standards/gb_iec.json` 与 `ul.json`（线缆标准表） |
 | `resize_assets.sh` | 把元件原图转成两档 WebP（thumbs 300px / full 700px，需要 ImageMagick） |

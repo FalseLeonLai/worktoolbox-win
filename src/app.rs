@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::screens::{about, alarm, cable, comms, electrical, units};
+use crate::screens::{about, alarm, cable, comms, debug, electrical, units};
 use crate::theme;
 use crate::ui;
 
@@ -11,16 +11,18 @@ pub enum Screen {
     Electrical,
     Units,
     Comms,
+    Debug,
     Cable,
     About,
 }
 
 /// 一级菜单：页面 / 图标 / 名称
-const MENU: [(Screen, &str, &str); 6] = [
+const MENU: [(Screen, &str, &str); 7] = [
     (Screen::Alarm, "triangle-alert", "报警码查询"),
     (Screen::Electrical, "circuit-board", "电气元件"),
     (Screen::Units, "ruler", "单位换算"),
     (Screen::Comms, "radio-tower", "通信参考"),
+    (Screen::Debug, "radio-tower", "网络与串口调试"),
     (Screen::Cable, "cable", "线缆选型"),
     (Screen::About, "info", "关于"),
 ];
@@ -31,6 +33,7 @@ pub struct App {
     pub units: units::UnitsScreen,
     pub electrical: electrical::ElectricalScreen,
     pub comms: comms::CommsScreen,
+    pub debug: debug::DebugScreen,
     pub cable: cable::CableScreen,
 }
 
@@ -41,6 +44,7 @@ impl App {
             "electrical" => Screen::Electrical,
             "units" => Screen::Units,
             "comms" => Screen::Comms,
+            "debug" => Screen::Debug,
             "cable" => Screen::Cable,
             "about" => Screen::About,
             _ => Screen::Alarm,
@@ -51,6 +55,7 @@ impl App {
             units: units::UnitsScreen::new(),
             electrical: electrical::ElectricalScreen::new(),
             comms: comms::CommsScreen::new(),
+            debug: debug::DebugScreen::new(),
             cable: cable::CableScreen::new(),
         }
     }
@@ -59,6 +64,8 @@ impl App {
 impl eframe::App for App {
     // eframe 0.36 新 API：主渲染入口是 ui()；面板（Panel / CentralPanel）在 Ui 中嵌套
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        // 隐藏调试页时也消费后台事件，保持连接和有界记录更新。
+        self.debug.poll(ui.ctx());
         // —— 左侧一级菜单（侧栏）——
         let side = egui::Panel::left("sidebar")
             .exact_size(216.0)
@@ -100,7 +107,7 @@ impl eframe::App for App {
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                     ui.add_space(2.0);
                     ui.label(
-                        egui::RichText::new("v1.4.3 · 单文件离线版")
+                        egui::RichText::new(concat!("v", env!("CARGO_PKG_VERSION"), " · 单文件版"))
                             .size(10.5)
                             .color(theme::faint_text()),
                     );
@@ -133,6 +140,7 @@ impl eframe::App for App {
                     Screen::Electrical => electrical::show(&mut self.electrical, ui),
                     Screen::Units => units::show(&mut self.units, ui),
                     Screen::Comms => comms::show(&mut self.comms, ui),
+                    Screen::Debug => self.debug.show(ui),
                     Screen::Cable => cable::show(&mut self.cable, ui),
                     Screen::About => about::show(self, ui),
                 }
