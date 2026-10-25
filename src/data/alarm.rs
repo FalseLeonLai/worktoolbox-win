@@ -167,10 +167,14 @@ impl AlarmDb {
         dedup(self.catalogs.iter().map(|c| c.category.clone()).collect())
     }
 
-    /// 系列列表（按当前品牌 / 类别过滤；保持目录顺序、去重）
-    pub fn series_list(&self, brand: Option<&str>, category: Option<&str>) -> Vec<String> {
-        let mut out: Vec<String> = Vec::new();
-        for c in &self.catalogs {
+    /// 按品牌/类别过滤后的 (catalog 下标, 序列名)，保持目录顺序、按序列名去重；空序列跳过。
+    pub fn series_entries(
+        &self,
+        brand: Option<&str>,
+        category: Option<&str>,
+    ) -> Vec<(usize, String)> {
+        let mut out: Vec<(usize, String)> = Vec::new();
+        for (i, c) in self.catalogs.iter().enumerate() {
             if let Some(b) = brand {
                 if c.brand != b {
                     continue;
@@ -181,12 +185,31 @@ impl AlarmDb {
                     continue;
                 }
             }
-            if !c.series.is_empty() && !out.contains(&c.series) {
-                out.push(c.series.clone());
+            if !c.series.is_empty() && !out.iter().any(|(_, s)| s == &c.series) {
+                out.push((i, c.series.clone()));
             }
         }
         out
     }
+
+    /// 系列列表（按当前品牌 / 类别过滤；保持目录顺序、去重）
+    pub fn series_list(&self, brand: Option<&str>, category: Option<&str>) -> Vec<String> {
+        self.series_entries(brand, category)
+            .into_iter()
+            .map(|(_, s)| s)
+            .collect()
+    }
+}
+
+/// q 需已 trim + 小写；空串匹配全部。
+/// 匹配 Catalog 的 series、任一 models、source_path；不含 brand/category。
+pub fn series_matches(c: &Catalog, q: &str) -> bool {
+    if q.is_empty() {
+        return true;
+    }
+    c.series.to_lowercase().contains(q)
+        || c.models.iter().any(|m| m.to_lowercase().contains(q))
+        || c.source_path.to_lowercase().contains(q)
 }
 
 fn dedup(v: Vec<String>) -> Vec<String> {
@@ -202,6 +225,116 @@ fn dedup(v: Vec<String>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn cat(brand: &str, category: &str, series: &str, source_path: &str, models: &[&str]) -> Catalog {
+        Catalog {
+            brand: brand.to_string(),
+            category: category.to_string(),
+            series: series.to_string(),
+            source_path: source_path.to_string(),
+            models: models.iter().map(|m| m.to_string()).collect(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn series_matches_hits_series_models_and_source_path_case_insensitively() {
+        let c = cat("汇川", "伺服", "DDR系列", "汇川伺服/DDR.xlsx", &["SV660N", "SV680"]);
+        assert!(series_matches(&c, ""), "空查询应匹配全部");
+        assert!(series_matches(&c, "ddr"), "应命中 series 中的 ddr");
+        assert!(series_matches(&c, "sv660n"), "应命中 models 中的型号");
+        assert!(series_matches(&c, "ddr.xlsx"), "应命中 source_path");
+        assert!(!series_matches(&c, "不存在的词"), "不相关查询不应命中");
+    }
+
+    #[test]
+    fn series_matches_ignores_brand_and_category() {
+        let c = cat("汇川", "伺服", "IS620系列", "docs/is620.xlsx", &["IS620"]);
+        assert!(!series_matches(&c, "汇川"), "brand 不参与匹配");
+        assert!(!series_matches(&c, "伺服"), "category 不参与匹配");
+    }
+
+    #[test]
+    fn series_entries_filters_dedups_skips_empty_and_keeps_order() {
+        let db = AlarmDb {
+            catalogs: vec![
+                cat("汇川", "伺服", "DDR系列", "a.xlsx", &[]), // 0
+                cat("汇川", "伺服", "DDR系列", "b.xlsx", &[]), // 1 同名序列
+                cat("汇川", "伺服", "", "c.xlsx", &[]),        // 2 空序列
+                cat("西门子", "伺服", "S120", "d.xlsx", &[]),  // 3
+                cat("汇川", "变频器", "MD500", "e.xlsx", &[]), // 4
+                cat("西门子", "变频器", "G120", "f.xlsx", &[]), // 5
+            ],
+            ..Default::default()
+        };
+        assert_eq!(
+            db.series_entries(None, None),
+            vec![
+                (0, "DDR系列".to_string()),
+                (3, "S120".to_string()),
+                (4, "MD500".to_string()),
+                (5, "G120".to_string()),
+            ],
+            "全量应保持目录顺序、按序列名去重、跳过空序列"
+        );
+        assert_eq!(
+            db.series_entries(Some("汇川"), None),
+            vec![(0, "DDR系列".to_string()), (4, "MD500".to_string())],
+            "按品牌过滤应只保留汇川"
+        );
+        assert_eq!(
+            db.series_entries(None, Some("变频器")),
+            vec![(4, "MD500".to_string()), (5, "G120".to_string())],
+            "按类别过滤应只保留变频器"
+        );
+        assert_eq!(
+            db.series_entries(Some("西门子"), Some("伺服")),
+            vec![(3, "S120".to_string())],
+            "品牌与类别应同时生效"
+        );
+        assert!(
+            db.series_entries(Some("高创"), None).is_empty(),
+            "无匹配品牌时应为空"
+        );
+        assert_eq!(
+            db.series_list(None, None),
+            db.series_entries(None, None)
+                .into_iter()
+                .map(|(_, s)| s)
+                .collect::<Vec<_>>(),
+            "series_list 名称序列应与 series_entries 一致"
+        );
+    }
+
+    #[test]
+    fn series_entries_and_matches_real_db_if_present() {
+        let p = std::path::Path::new("data/alarms.bin");
+        if !p.exists() {
+            eprintln!("data/alarms.bin 不存在，跳过");
+            return;
+        }
+        let db = AlarmDb::load(p).expect("alarms.bin 加载失败");
+        let entries = db.series_entries(None, None);
+        let list = db.series_list(None, None);
+        assert_eq!(
+            entries.len(),
+            list.len(),
+            "series_entries 与 series_list 长度应一致"
+        );
+        assert_eq!(
+            entries.iter().map(|(_, s)| s.clone()).collect::<Vec<_>>(),
+            list,
+            "series_entries 与 series_list 顺序应一致"
+        );
+        let (idx, _) = entries
+            .iter()
+            .find(|(_, s)| s == "DDR系列")
+            .expect("系列列表中应存在 DDR系列");
+        assert!(
+            series_matches(&db.catalogs[*idx], "ddr"),
+            "DDR系列 catalog 应以 ddr 命中"
+        );
+    }
 
     /// 若 data/alarms.bin 存在则做一次真实数据加载校验（由 tools/convert_alarms.py 生成）
     #[test]

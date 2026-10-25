@@ -24,6 +24,7 @@ pub fn show(_app: &mut App, ui: &mut egui::Ui) {
             );
             bullet(ui, "电气元件：30 个常用元件的渲染图、用途原理与工程要点。");
             bullet(ui, "单位换算：22 个类别（含线规 AWG），支持单位对调与全类别对照。");
+            bullet(ui, "进制转换：IEEE 754 浮点（F32 / F64）支持十进制与二 / 十六进制位模式互转；整数（U16 / I16 / U32 / I32）支持二 / 八 / 十 / 十六进制互转，支持字节序与字序切换。");
             bullet(ui, "通信参考：26 个 PLC 数据类型 + 8 类通信协议工程要点速查。");
             bullet(ui, "网络与串口调试：TCP 客户端/服务端、UDP、串口、Modbus TCP/RTU 和经典 Siemens S7；HEX/文本收发与地址读写。");
             bullet(

@@ -14,6 +14,12 @@ pub struct AlarmScreen {
     pub brand: Option<String>,
     pub category: Option<String>,
     pub series: Option<String>,
+    /// 系列弹层内的搜索文本
+    series_query: String,
+    /// 按品牌/类别过滤后的完整系列列表（缓存，用于校验与弹层筛选）
+    series_cache: Vec<(usize, String)>,
+    /// 缓存失效键 (brand, category)
+    series_cache_key: Option<(Option<String>, Option<String>)>,
     results: Vec<u32>,
     last_key: Option<(String, Option<String>, Option<String>, Option<String>)>,
     pub selected: Option<u32>,
@@ -40,6 +46,9 @@ impl AlarmScreen {
             category: None,
             // 调试/截图用：WTB_SERIES 预填系列筛选
             series: std::env::var("WTB_SERIES").ok().filter(|v| !v.is_empty()),
+            series_query: String::new(),
+            series_cache: Vec::new(),
+            series_cache_key: None,
             results: Vec::new(),
             last_key: None,
             selected: None,
@@ -134,10 +143,15 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
         }
     });
 
-    // 系列选项（随品牌 / 类别联动；当前选择失效时自动清除）
-    let series_opts = db.series_list(s.brand.as_deref(), s.category.as_deref());
+    // 系列缓存（随品牌 / 类别联动；键变化时才重建）
+    let cache_key = (s.brand.clone(), s.category.clone());
+    if s.series_cache_key.as_ref() != Some(&cache_key) {
+        s.series_cache = db.series_entries(s.brand.as_deref(), s.category.as_deref());
+        s.series_cache_key = Some(cache_key);
+    }
+    // 当前选择失效时自动清除（必须在缓存重建之后校验）
     if let Some(cur) = &s.series {
-        if !series_opts.contains(cur) {
+        if !s.series_cache.iter().any(|(_, name)| name == cur) {
             s.series = None;
         }
     }
@@ -166,26 +180,71 @@ pub fn show(s: &mut AlarmScreen, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("系列").color(muted()).size(13.0));
         let cur = s.series.clone().unwrap_or_else(|| "全部".to_string());
-        egui::ComboBox::from_id_salt("alarm_series")
-            .selected_text(egui::RichText::new(cur).size(13.0))
-            .width(190.0)
-            .show_ui(ui, |ui| {
-                if ui.selectable_label(s.series.is_none(), "全部").clicked() {
-                    s.series = None;
-                }
-                for o in &series_opts {
-                    let sel = s.series.as_deref() == Some(o.as_str());
-                    if ui.selectable_label(sel, o).clicked() {
-                        s.series = Some(o.clone());
-                    }
-                }
-            });
+        let trigger = ui.add_sized(
+            [190.0, 26.0],
+            egui::Button::new(egui::RichText::new(format!("{cur} ▾")).size(13.0)),
+        );
         ui.add_space(14.0);
         ui.label(
             egui::RichText::new(format!("共 {} 条", s.results.len()))
                 .color(faint_text())
                 .size(12.0),
         );
+
+        // 系列选择弹层：顶部固定搜索框，下方可滚动列表；Esc / 点击外部由 Popup 关闭
+        let popup_id = egui::Popup::default_response_id(&trigger);
+        let opening = trigger.clicked() && !egui::Popup::is_id_open(ui.ctx(), popup_id);
+        if opening {
+            s.series_query.clear();
+        }
+        let series = &mut s.series;
+        let query = &mut s.series_query;
+        let cache = &s.series_cache;
+        egui::Popup::from_toggle_button_response(&trigger)
+            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+            .width(240.0)
+            .show(|ui| {
+                let search = ui.add(
+                    egui::TextEdit::singleline(&mut *query)
+                        .id_salt("series_search")
+                        .hint_text("搜索系列 / 型号 / 来源…")
+                        .desired_width(f32::INFINITY),
+                );
+                // 首帧 request_focus 可能不生效：弹层打开期间搜索框未获焦时补请求
+                if !search.has_focus() {
+                    search.request_focus();
+                }
+                ui.separator();
+                let q = query.trim().to_lowercase();
+                egui::ScrollArea::vertical()
+                    .id_salt("series_popup")
+                    .max_height(320.0)
+                    .show(ui, |ui| {
+                        if ui.selectable_label(series.is_none(), "全部").clicked() {
+                            *series = None;
+                            ui.close();
+                        }
+                        let mut matched = false;
+                        for (ci, name) in cache {
+                            if !crate::data::alarm::series_matches(&db.catalogs[*ci], &q) {
+                                continue;
+                            }
+                            matched = true;
+                            let sel = series.as_deref() == Some(name.as_str());
+                            if ui.selectable_label(sel, name).clicked() {
+                                *series = Some(name.clone());
+                                ui.close();
+                            }
+                        }
+                        if !matched {
+                            ui.label(
+                                egui::RichText::new("无匹配系列")
+                                    .color(faint_text())
+                                    .size(12.5),
+                            );
+                        }
+                    });
+            });
     });
     ui.add_space(4.0);
 

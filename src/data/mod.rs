@@ -4,4 +4,5 @@ pub mod alarm;
 pub mod cable_engine;
 pub mod comms;
 pub mod electrical;
+pub mod radix;
 pub mod units;

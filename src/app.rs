@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::screens::{about, alarm, cable, comms, debug, electrical, units};
+use crate::screens::{about, alarm, cable, comms, debug, electrical, radix, units};
 use crate::theme;
 use crate::ui;
 
@@ -10,6 +10,7 @@ pub enum Screen {
     Alarm,
     Electrical,
     Units,
+    Radix,
     Comms,
     Debug,
     Cable,
@@ -17,10 +18,11 @@ pub enum Screen {
 }
 
 /// 一级菜单：页面 / 图标 / 名称
-const MENU: [(Screen, &str, &str); 7] = [
+const MENU: [(Screen, &str, &str); 8] = [
     (Screen::Alarm, "triangle-alert", "报警码查询"),
     (Screen::Electrical, "circuit-board", "电气元件"),
     (Screen::Units, "ruler", "单位换算"),
+    (Screen::Radix, "boxes", "进制转换"),
     (Screen::Comms, "radio-tower", "通信参考"),
     (Screen::Debug, "radio-tower", "网络与串口调试"),
     (Screen::Cable, "cable", "线缆选型"),
@@ -31,6 +33,7 @@ pub struct App {
     pub screen: Screen,
     pub alarm: alarm::AlarmScreen,
     pub units: units::UnitsScreen,
+    pub radix: radix::RadixScreen,
     pub electrical: electrical::ElectricalScreen,
     pub comms: comms::CommsScreen,
     pub debug: debug::DebugScreen,
@@ -43,6 +46,7 @@ impl App {
         let screen = match std::env::var("WTB_START_SCREEN").unwrap_or_default().as_str() {
             "electrical" => Screen::Electrical,
             "units" => Screen::Units,
+            "radix" => Screen::Radix,
             "comms" => Screen::Comms,
             "debug" => Screen::Debug,
             "cable" => Screen::Cable,
@@ -53,6 +57,7 @@ impl App {
             screen,
             alarm: alarm::AlarmScreen::new(&cc.egui_ctx),
             units: units::UnitsScreen::new(),
+            radix: radix::RadixScreen::new(),
             electrical: electrical::ElectricalScreen::new(),
             comms: comms::CommsScreen::new(),
             debug: debug::DebugScreen::new(),
@@ -139,6 +144,7 @@ impl eframe::App for App {
                     Screen::Alarm => alarm::show(&mut self.alarm, ui),
                     Screen::Electrical => electrical::show(&mut self.electrical, ui),
                     Screen::Units => units::show(&mut self.units, ui),
+                    Screen::Radix => radix::show(&mut self.radix, ui),
                     Screen::Comms => comms::show(&mut self.comms, ui),
                     Screen::Debug => self.debug.show(ui),
                     Screen::Cable => cable::show(&mut self.cable, ui),
